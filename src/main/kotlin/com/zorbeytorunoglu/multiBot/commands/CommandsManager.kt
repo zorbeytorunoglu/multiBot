@@ -13,15 +13,18 @@ class CommandsManager(private val bot: Bot) {
         registerCommands()
     }
 
-    fun registerCommands() {
+    private fun registerCommands() {
 
-        val commandData = mutableListOf<CommandData>()
+        commands.forEach { command ->
 
-        commands.forEach {
-
-            val data = Commands.slash(it.name,it.description)
-            //TODO: If optionData, subCommand...
-            bot.jda.updateCommands().addCommands(data).queue()
+            val data = Commands.slash(command.name,command.description)
+            if (command.optionData().isNotEmpty())
+                data.addOptions(command.optionData())
+            if (command.subcommandData().isNotEmpty())
+                data.addSubcommands(command.subcommandData())
+            bot.jda.updateCommands().addCommands(data).queue {
+                println("Command ${command.name} is registered.")
+            }
 
         }
 
