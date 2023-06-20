@@ -5,6 +5,7 @@ import com.zorbeytorunoglu.multiBot.commands.Listener
 import com.zorbeytorunoglu.multiBot.commands.configuration.CommandsConfigurationHandler
 import com.zorbeytorunoglu.multiBot.permissions.PermissionManager
 import com.zorbeytorunoglu.multiBot.settings.SettingsHandler
+import com.zorbeytorunoglu.multiBot.ticket.configuration.TicketConfigurationHandler
 import net.dv8tion.jda.api.JDABuilder
 
 fun main() {
@@ -23,5 +24,7 @@ fun main() {
     bot.permissionManager = permissionManager
     bot.commandsManager = CommandsManager(bot)
     bot.jda.addEventListener(Listener(bot))
+
+    TicketConfigurationHandler()
 
 }
