@@ -1,7 +1,6 @@
-package com.zorbeytorunoglu.multiBot.ticket
+package com.zorbeytorunoglu.multiBot.ticket.configuration
 
 import com.zorbeytorunoglu.multiBot.configuration.embedmessage.EmbedMessageConfig
-import com.zorbeytorunoglu.multiBot.ticket.configuration.TicketButtonConfig
 
 data class TicketPanelConfig(
     val titleFormat: String,
