@@ -1,6 +1,6 @@
 package com.zorbeytorunoglu.multiBot.settings
 
-import com.zorbeytorunoglu.multiBot.utils.GsonUtils
+import com.zorbeytorunoglu.multiBot.utils.FileUtils
 import java.io.File
 
 class SettingsHandler {
@@ -15,7 +15,7 @@ class SettingsHandler {
 
         val file = File("settings.json")
 
-        return GsonUtils.loadFromJson(file, Settings::class.java)
+        return FileUtils.loadFromJson(file, Settings::class.java)
 
     }
 
