@@ -1,11 +1,9 @@
 package com.zorbeytorunoglu.multiBot.ticket.configuration
 
 import com.zorbeytorunoglu.multiBot.configuration.embedmessage.EmbedMessage
-import com.zorbeytorunoglu.multiBot.ticket.TicketPanelConfig
-import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.entities.MessageEmbed
 
-class TicketPanel(private val ticketPanelConfig: TicketPanelConfig) {
+class TicketPanel(val ticketPanelConfig: TicketPanelConfig) {
 
     val embedMessage: MessageEmbed
     val buttons: List<TicketButton>
