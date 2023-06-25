@@ -1,16 +1,16 @@
 package com.zorbeytorunoglu.multiBot.configuration.embedmessage
 
 data class EmbedMessageConfig(
-    val title: String?,
-    val titleUrl: String?,
-    val description: String?,
-    val author: String?,
-    val authorUrl: String?,
-    val authorIconUrl: String?,
-    val color: String?,
-    val footer: String?,
-    val footerUrl: String?,
-    val image: String?,
-    val thumbnail: String?,
-    val url: String?
+    val title: String? = "example",
+    val titleUrl: String? = null,
+    val description: String? = "example",
+    val author: String? = "example",
+    val authorUrl: String? = null,
+    val authorIconUrl: String? = null,
+    val color: String? = "ORANGE",
+    val footer: String? = "example",
+    val footerUrl: String? = null,
+    val image: String? = null,
+    val thumbnail: String? = null,
+    val url: String? = null
 )
