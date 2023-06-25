@@ -1,6 +1,6 @@
 package com.zorbeytorunoglu.multiBot.commands.configuration
 
-import com.zorbeytorunoglu.multiBot.utils.GsonUtils
+import com.zorbeytorunoglu.multiBot.utils.FileUtils
 import java.io.File
 
 class CommandsConfigurationHandler {
@@ -15,7 +15,7 @@ class CommandsConfigurationHandler {
 
         val file = File("commands.json")
 
-        return GsonUtils.loadFromJson(file, Commands::class.java)
+        return FileUtils.loadFromJson(file, Commands::class.java)
 
     }
 
