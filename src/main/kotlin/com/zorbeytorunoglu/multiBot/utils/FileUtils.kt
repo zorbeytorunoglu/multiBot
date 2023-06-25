@@ -7,7 +7,7 @@ import java.io.File
 import java.io.FileWriter
 import java.nio.file.Files
 
-object GsonUtils {
+object FileUtils {
 
     fun <T> loadFromJson(file: File, clazz: Class<T>): T {
 
@@ -43,6 +43,38 @@ object GsonUtils {
         }
 
         return returnClazz
+
+    }
+
+    fun writeJsonToFile(json: String, file: File) {
+
+        if (!file.exists()) {
+            file.createNewFile()
+        }
+
+        val gson = GsonBuilder().setPrettyPrinting().create()
+
+        try {
+            val writer = FileWriter(file)
+            writer.write(json)
+            writer.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            println("${file.name} could not be saved due to an error in writer.")
+        }
+
+    }
+
+    fun readFile(file: File): String? {
+
+        val reader = Files.newBufferedReader(file.toPath().toAbsolutePath())
+
+        return try {
+            reader.readText()
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+            null
+        }
 
     }
 
