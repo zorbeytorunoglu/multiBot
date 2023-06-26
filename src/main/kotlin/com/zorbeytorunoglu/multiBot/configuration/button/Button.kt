@@ -13,7 +13,7 @@ class Button(buttonConfig: ButtonConfig) {
         id = buttonConfig.id
         button = Button.of(ButtonStyle.valueOf(buttonConfig.style),
             id, buttonConfig.label, if (buttonConfig.emoji == null) null
-        else Emoji.fromUnicode(buttonConfig.emoji))
+        else Emoji.fromFormatted(buttonConfig.emoji))
     }
 
 }
