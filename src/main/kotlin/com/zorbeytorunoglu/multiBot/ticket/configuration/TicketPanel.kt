@@ -14,7 +14,7 @@ class TicketPanel(val ticketPanelConfig: TicketPanelConfig) {
 
         val buttons: MutableList<TicketButton> = mutableListOf()
 
-        ticketPanelConfig.buttonsConfig.forEach {
+        ticketPanelConfig.buttonConfigs.forEach {
             buttons.add(TicketButton(it))
         }
 
