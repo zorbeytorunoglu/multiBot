@@ -32,12 +32,16 @@ class TicketConfigurationHandler {
 
             val buttonConfig = ButtonConfig("SECONDARY","example","example",null)
 
+            val openingEmbed = EmbedMessageConfig("Your Support Ticket!",null,
+                "Wait for a staff member to respond!")
+
             val buttonsConfig: List<TicketButtonConfig> = listOf(
-                TicketButtonConfig(buttonConfig,"1203910239021")
+                TicketButtonConfig(buttonConfig,"1203910239021","ticket-%ticket_id%",
+                    openingEmbed, "Admin,Moderator,Support")
             )
 
-            val ticketPanelConfig = TicketPanelConfig("title-",embedMessageConfig,
-                buttonsConfig,"12031920",embedMessageConfig)
+            val ticketPanelConfig = TicketPanelConfig(embedMessageConfig,
+                buttonsConfig)
 
             ticketPanelConfigs["1"] = ticketPanelConfig
 
