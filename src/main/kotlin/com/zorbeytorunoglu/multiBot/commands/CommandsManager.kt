@@ -26,9 +26,7 @@ class CommandsManager(private val bot: Bot) {
                 data.addOptions(command.optionData())
             if (command.subcommandData().isNotEmpty())
                 data.addSubcommands(command.subcommandData())
-            bot.jda.updateCommands().addCommands(data).queue {
-                println("Command ${command.name} is registered.")
-            }
+            bot.jda.updateCommands().addCommands(data).queue()
 
         }
 
