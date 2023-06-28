@@ -8,6 +8,7 @@ data class TicketButtonConfig(
     val targetCategoryId: String,
     val channelTitleFormat: String,
     val openingEmbed: EmbedMessageConfig? = null,
-    val rolesToBeAdded: String? = null
-
+    val rolesToBeAdded: String? = null,
+    val rolesToBePinged: String? = null,
+    val limit: Int = 1
 )
