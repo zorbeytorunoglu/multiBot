@@ -8,6 +8,9 @@ enum class Permission {
     TICKET_REMOVE,
     TICKET_CREATE_TRANSCRIPT,
     TICKET_CREATE,
-    PING;
+    PING,
+    REMIND,
+    TICKET_PANEL_CREATE,
+    RECORD;
 
 }
