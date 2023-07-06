@@ -2,6 +2,7 @@ package com.zorbeytorunoglu.multiBot.commands.ticket
 
 import com.zorbeytorunoglu.multiBot.Bot
 import com.zorbeytorunoglu.multiBot.commands.Command
+import com.zorbeytorunoglu.multiBot.permissions.Permission
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
@@ -26,6 +27,11 @@ class TicketPanelCommand(private val bot: Bot): Command {
     }
 
     override fun execute(event: SlashCommandInteractionEvent) {
+
+        if (!bot.permissionManager.hasPermission(event.member!!, Permission.TICKET_PANEL_CREATE)) {
+            event.reply(bot.messagesHandler.messages.noPermission).setEphemeral(true).queue()
+            return
+        }
 
         val id = event.getOption("id")!!.asString
 
