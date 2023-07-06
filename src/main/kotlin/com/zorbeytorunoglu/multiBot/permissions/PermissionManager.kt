@@ -3,6 +3,7 @@ package com.zorbeytorunoglu.multiBot.permissions
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import net.dv8tion.jda.api.entities.Member
 import java.io.File
 import java.io.FileWriter
 import java.nio.file.Files
@@ -55,6 +56,12 @@ class PermissionManager {
     fun hasPermission(id: String, permission: Permission): Boolean {
         if (!permissions.containsKey(id)) return false
         return permissions[id]!!.permissions.contains(permission)
+    }
+
+    fun hasPermission(member: Member, permission: Permission): Boolean {
+        if (member.permissions.contains(net.dv8tion.jda.api.Permission.ADMINISTRATOR)) return true
+        if (!permissions.containsKey(member.id)) return false
+        return permissions[member.id]!!.permissions.contains(permission)
     }
 
     fun addPermission(id: String, holderType: HolderType, permission: Permission) {
