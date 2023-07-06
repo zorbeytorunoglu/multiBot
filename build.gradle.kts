@@ -14,6 +14,8 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.21")
     implementation("net.dv8tion:JDA:5.0.0-beta.10")
     implementation("com.google.code.gson:gson:2.10.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.2")
+    implementation("de.sciss:jump3r:1.0.5")
 }
 
 tasks.jar {
