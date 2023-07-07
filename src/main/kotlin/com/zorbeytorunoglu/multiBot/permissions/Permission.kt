@@ -11,6 +11,7 @@ enum class Permission {
     PING,
     REMIND,
     TICKET_PANEL_CREATE,
-    RECORD;
+    RECORD,
+    PERMISSION;
 
 }
