@@ -3,6 +3,7 @@ package com.zorbeytorunoglu.multiBot.permissions
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import net.dv8tion.jda.api.entities.IMentionable
 import net.dv8tion.jda.api.entities.Member
 import java.io.File
 import java.io.FileWriter
@@ -55,13 +56,19 @@ class PermissionManager {
 
     fun hasPermission(id: String, permission: Permission): Boolean {
         if (!permissions.containsKey(id)) return false
+        if (permissions[id]!!.permissions.contains(Permission.ALL)) return true
         return permissions[id]!!.permissions.contains(permission)
     }
 
     fun hasPermission(member: Member, permission: Permission): Boolean {
         if (member.permissions.contains(net.dv8tion.jda.api.Permission.ADMINISTRATOR)) return true
         if (!permissions.containsKey(member.id)) return false
+        if (permissions[member.id]!!.permissions.contains(Permission.ALL)) return true
         return permissions[member.id]!!.permissions.contains(permission)
+    }
+
+    fun isAdmin(member: Member): Boolean {
+        return member.permissions.contains(net.dv8tion.jda.api.Permission.ADMINISTRATOR)
     }
 
     fun addPermission(id: String, holderType: HolderType, permission: Permission) {
@@ -76,6 +83,14 @@ class PermissionManager {
         val collection = permissions[id]!!.permissions
         if (!collection.contains(permission)) return
         collection.remove(permission)
+    }
+
+    fun permissionListOf(mentionable: IMentionable): List<Permission> {
+
+        if (!permissions.containsKey(mentionable.id)) return emptyList()
+
+        return permissions[mentionable.id]!!.permissions.toList()
+
     }
 
 }
