@@ -12,5 +12,7 @@ data class Commands(
     val remindCmd: String = "remind",
     val remindDesc: String = "Schedules a reminder in that channel.",
     val recordCmd: String = "record",
-    val recordDesc: String = "Records the voices in a voice channel."
+    val recordDesc: String = "Records the voices in a voice channel.",
+    val permissionCmd: String = "permission",
+    val permissionDesc: String = "Permission management command."
 )
