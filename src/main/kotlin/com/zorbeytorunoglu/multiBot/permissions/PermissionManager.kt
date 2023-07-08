@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import net.dv8tion.jda.api.entities.IMentionable
 import net.dv8tion.jda.api.entities.Member
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import java.io.File
 import java.io.FileWriter
 import java.nio.file.Files
@@ -58,6 +59,15 @@ class PermissionManager {
         if (!permissions.containsKey(id)) return false
         if (permissions[id]!!.permissions.contains(Permission.ALL)) return true
         return permissions[id]!!.permissions.contains(permission)
+    }
+
+    fun hasPermission(id: String, event: SlashCommandInteractionEvent, permission: Permission): Boolean {
+        if (event.isFromGuild) {
+            if (event.guild!!.getMemberById(id) != null) {
+                return hasPermission(event.guild!!.getMemberById(id)!!, permission)
+            }
+        }
+        return hasPermission(id, permission)
     }
 
     fun hasPermission(member: Member, permission: Permission): Boolean {
