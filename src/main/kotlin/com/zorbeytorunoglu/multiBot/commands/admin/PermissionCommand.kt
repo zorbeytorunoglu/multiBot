@@ -173,19 +173,24 @@ class PermissionCommand(private val bot: Bot): Command {
 
             val builder = StringBuilder()
 
+            builder.append("**${bot.messagesHandler.messages.permissionCheckTitle}**"
+                .replace("%holder%", holder.asMentionable.asMention)).append("\n").append("\n")
+
             permList.forEach {
-                builder.append("${it.name}, ")
+                if (permList.indexOf(it) == permList.lastIndex) {
+                    builder.append(it.name)
+                } else {
+                    builder.append("${it.name}, ")
+                }
             }
 
             val embedB = EmbedBuilder()
-
-            embedB.setTitle(bot.messagesHandler.messages.permissionCheckTitle.replace("%holder%",holder.asMentionable.asMention))
 
             embedB.setDescription(builder.toString())
 
             event.replyEmbeds(embedB.build()).setEphemeral(true).queue()
 
-        }
+        } else return
 
     }
 
