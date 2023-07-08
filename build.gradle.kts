@@ -8,6 +8,7 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    maven("https://jitpack.io")
 }
 
 dependencies {
@@ -16,6 +17,8 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.2")
     implementation("de.sciss:jump3r:1.0.5")
+    implementation("ch.qos.logback:logback-classic:1.2.8")
+    implementation("org.jsoup:jsoup:1.16.1")
 }
 
 tasks.jar {
