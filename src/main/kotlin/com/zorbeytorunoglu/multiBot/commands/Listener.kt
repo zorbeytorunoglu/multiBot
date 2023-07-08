@@ -8,8 +8,15 @@ class Listener(private val bot: Bot): ListenerAdapter() {
 
     override fun onSlashCommandInteraction(event: SlashCommandInteractionEvent) {
 
-        bot.commandsManager.commands.forEach {
-            if (it.name == event.name) it.execute(event)
+        for (command in bot.commandsManager.commands) {
+
+            if (event.name == command.name) {
+
+                if (!event.isFromGuild && command.guildOnly) continue
+                command.execute(event)
+
+            }
+
         }
 
     }
