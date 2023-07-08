@@ -5,7 +5,9 @@ import com.zorbeytorunoglu.multiBot.commands.admin.PermissionCommand
 import com.zorbeytorunoglu.multiBot.commands.audio.RecordCommand
 import com.zorbeytorunoglu.multiBot.commands.misc.PingCommand
 import com.zorbeytorunoglu.multiBot.commands.misc.RemindCommand
+import com.zorbeytorunoglu.multiBot.commands.misc.SayCommand
 import com.zorbeytorunoglu.multiBot.commands.moderation.KickCommand
+import com.zorbeytorunoglu.multiBot.commands.ticket.TicketCommand
 import com.zorbeytorunoglu.multiBot.commands.ticket.TicketPanelCommand
 import kotlinx.coroutines.*
 import net.dv8tion.jda.api.interactions.commands.build.Commands
@@ -18,7 +20,9 @@ class CommandsManager(private val bot: Bot) {
         KickCommand(bot),
         RemindCommand(bot),
         RecordCommand(bot),
-        PermissionCommand(bot)
+        PermissionCommand(bot),
+        SayCommand(bot),
+        TicketCommand(bot)
         )
 
     init {
@@ -38,7 +42,7 @@ class CommandsManager(private val bot: Bot) {
 
         commands.forEach { command ->
 
-            delay(1500)
+            delay(2000)
 
             val data = Commands.slash(command.name, command.description)
             if (command.optionData().isNotEmpty())
