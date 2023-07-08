@@ -14,5 +14,11 @@ data class Commands(
     val recordCmd: String = "record",
     val recordDesc: String = "Records the voices in a voice channel.",
     val permissionCmd: String = "permission",
-    val permissionDesc: String = "Permission management command."
+    val permissionDesc: String = "Permission management command.",
+    val sayCmd: String = "say",
+    val sayDesc: String = "Makes the bot send the message provided.",
+    val addCmd: String = "add",
+    val addDesc: String = "Adds a member to the ticket.",
+    val ticketCmd: String = "ticket",
+    val ticketDesc: String = "Ticket moderation command."
 )
