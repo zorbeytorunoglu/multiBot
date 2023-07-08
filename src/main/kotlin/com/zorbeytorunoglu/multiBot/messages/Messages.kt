@@ -23,6 +23,14 @@ data class Messages(
     val alreadyHasNotThisPermission: String = "Subject does not have this permission already!",
     val permissionRemoved: String = "Permission %permission% is removed from %holder%!",
     val hasNoPermission: String = "Subject does not have any permission. If he can use the commands, he may be authorized by the guild.",
-    val permissionCheckTitle: String = "Permission List of %holder%"
+    val permissionCheckTitle: String = "Permission List of %holder%",
+    val saySent: String = "Message is sent!",
+    val memberNotFound: String = "Member could not be found.",
+    val notATicket: String = "This is not a ticket channel!",
+    val alreadyInTicket: String = "Member is already has permission to view and send message to the ticket!",
+    val addedToTicket: String = "%member% has been added to the ticket!",
+    val notInTicket: String = "Member is not in the ticket!",
+    val ticketWillBeDeleted: String = "Ticket will be in 10 seconds!",
+    val deleteConfirm: String = "Submit /delete command again to confirm to delete."
 
 )
