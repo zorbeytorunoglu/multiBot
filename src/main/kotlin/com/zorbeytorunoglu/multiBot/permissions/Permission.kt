@@ -13,6 +13,7 @@ enum class Permission {
     TICKET_PANEL_CREATE,
     RECORD,
     PERMISSION,
-    SAY;
+    SAY,
+    TRANSCRIPT;
 
 }
