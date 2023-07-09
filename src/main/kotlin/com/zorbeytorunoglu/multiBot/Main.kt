@@ -19,7 +19,7 @@ fun main() {
 
     builder.addEventListeners(ReadyListener(bot))
 
-    builder.enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES)
+    builder.enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT)
 
     builder.enableCache(CacheFlag.MEMBER_OVERRIDES)
 
