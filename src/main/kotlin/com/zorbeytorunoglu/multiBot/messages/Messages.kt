@@ -31,6 +31,10 @@ data class Messages(
     val addedToTicket: String = "%member% has been added to the ticket!",
     val notInTicket: String = "Member is not in the ticket!",
     val ticketWillBeDeleted: String = "Ticket will be in 10 seconds!",
-    val deleteConfirm: String = "Submit /delete command again to confirm to delete."
+    val deleteConfirm: String = "Submit /delete command again to confirm to delete.",
+    val transcriptRetrievingMessages: String = "Retrieving messages...",
+    val transcriptMessagesRetrieved: String = "Messages are retrieved, creating the transcript...",
+    val transcriptGenerating: String = "Generating a transcript...",
+    val transcriptGenerated: String = "Transcript is generated!"
 
 )
