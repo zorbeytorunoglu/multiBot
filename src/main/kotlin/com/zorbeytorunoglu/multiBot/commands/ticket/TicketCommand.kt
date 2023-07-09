@@ -3,9 +3,8 @@ package com.zorbeytorunoglu.multiBot.commands.ticket
 import com.zorbeytorunoglu.multiBot.Bot
 import com.zorbeytorunoglu.multiBot.commands.Command
 import com.zorbeytorunoglu.multiBot.permissions.Permission
-import com.zorbeytorunoglu.multiBot.transcript.DiscordHtmlTranscripts
+import com.zorbeytorunoglu.multiBot.transcript.Transcript
 import net.dv8tion.jda.api.entities.channel.ChannelType
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
@@ -164,7 +163,9 @@ class TicketCommand(private val bot: Bot): Command {
 
                             if (event.getOption("transcript") != null) {
                                 if (event.getOption("transcript")!!.asBoolean) {
-                                    DiscordHtmlTranscripts.getInstance().createTranscript(event.guildChannel.asTextChannel())
+
+                                    Transcript().createTranscript(event.channel)
+
                                 }
                             }
 
