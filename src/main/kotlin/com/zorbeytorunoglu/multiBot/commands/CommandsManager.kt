@@ -6,6 +6,7 @@ import com.zorbeytorunoglu.multiBot.commands.audio.RecordCommand
 import com.zorbeytorunoglu.multiBot.commands.misc.PingCommand
 import com.zorbeytorunoglu.multiBot.commands.misc.RemindCommand
 import com.zorbeytorunoglu.multiBot.commands.misc.SayCommand
+import com.zorbeytorunoglu.multiBot.commands.misc.TranscriptCommand
 import com.zorbeytorunoglu.multiBot.commands.moderation.KickCommand
 import com.zorbeytorunoglu.multiBot.commands.ticket.TicketCommand
 import com.zorbeytorunoglu.multiBot.commands.ticket.TicketPanelCommand
@@ -22,7 +23,8 @@ class CommandsManager(private val bot: Bot) {
         RecordCommand(bot),
         PermissionCommand(bot),
         SayCommand(bot),
-        TicketCommand(bot)
+        TicketCommand(bot),
+        TranscriptCommand(bot)
         )
 
     init {

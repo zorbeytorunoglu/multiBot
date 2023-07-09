@@ -20,5 +20,7 @@ data class Commands(
     val addCmd: String = "add",
     val addDesc: String = "Adds a member to the ticket.",
     val ticketCmd: String = "ticket",
-    val ticketDesc: String = "Ticket moderation command."
+    val ticketDesc: String = "Ticket moderation command.",
+    val transcriptCmd: String = "transcript",
+    val transcriptDesc: String = "Creates a transcript."
 )
