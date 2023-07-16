@@ -54,7 +54,7 @@ class TranscriptCommand(private val bot: Bot): Command {
 
                 msg.editOriginal(bot.messagesHandler.messages.transcriptMessagesRetrieved).queue()
 
-                val html = createFileFromInputStream(Transcript().generateFromMessages(it), event.channel.name)
+                val html = createFileFromInputStream(Transcript().fromMessages(it), event.channel.name)
 
                 msg.deleteOriginal().queue()
 
