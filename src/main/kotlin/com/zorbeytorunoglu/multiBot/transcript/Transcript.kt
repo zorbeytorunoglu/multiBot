@@ -30,21 +30,23 @@ class Transcript {
 
     @Throws(IOException::class)
     fun createTranscript(channel: MessageChannel): InputStream {
-        return generateFromMessages(channel.iterableHistory.stream().collect(Collectors.toList()))
+        return fromMessages(channel.iterableHistory.stream().collect(Collectors.toList()))
     }
 
     @Throws(IOException::class)
-    fun generateFromMessages(messages: Collection<Message>): InputStream {
+    fun fromMessages(messages: Collection<Message>): InputStream {
         val htmlTemplate = findFile("template.html")
         require(!messages.isEmpty()) { "No messages to generate a transcript from" }
         val channel: Channel = messages.iterator().next().channel
         val document = Jsoup.parse(htmlTemplate, "UTF-8")
         document.outputSettings().indentAmount(0).prettyPrint(true)
-        document.getElementsByClass("preamble__guild-icon")
-            .first()!!.attr(
-                "src",
-                if (channel.type == ChannelType.PRIVATE) (channel as PrivateChannel).user!!.effectiveAvatarUrl else (channel as GuildChannel).guild.iconUrl
-            ) // set guild icon
+        (if (channel.type == ChannelType.PRIVATE) (channel as PrivateChannel).user!!.effectiveAvatarUrl else (channel as GuildChannel).guild.iconUrl)?.let {
+            document.getElementsByClass("preamble__guild-icon")
+                .first()!!.attr(
+                    "src",
+                    it
+                )
+        } // set guild icon
         document.getElementById("transcriptTitle")!!.text(channel.name) // set title
         document.getElementById("guildname")!!.text(
             if (channel.type == ChannelType.PRIVATE) (channel as PrivateChannel).user!!.name else (channel as GuildChannel).guild.name
@@ -63,8 +65,7 @@ class Transcript {
                 reference.addClass("chatlog__reference")
                 val referenceMessage = message.referencedMessage
                 val author = referenceMessage!!.author
-                val color: String
-                color = if (channel.type == ChannelType.PRIVATE) "#FFFFFF" else {
+                val color: String = if (channel.type == ChannelType.PRIVATE) "#FFFFFF" else {
                     val member = (channel as GuildChannel).guild.getMember(author)
                     if (member == null) "#FFFFFF" else if (member.color == null) "#FFFFFF" else toHex(
                         member.color!!
@@ -88,11 +89,11 @@ class Transcript {
                 referenceContentContentText.attr("onclick", "scrollToMessage(event, '" + referenceMessage.id + "')")
                 val referenceEm = document.createElement("em")
                 referenceEm.text(
-                    if (referenceMessage.contentDisplay != null) if (referenceMessage.contentDisplay.length > 42) (referenceMessage.contentDisplay.substring(
+                    if (referenceMessage.contentDisplay.length > 42) (referenceMessage.contentDisplay.substring(
                         0,
                         42
                     )
-                            + "...") else referenceMessage.contentDisplay else "Click to see attachment"
+                            + "...") else referenceMessage.contentDisplay
                 )
                 referenceContentContentText.appendChild(referenceEm)
                 referenceContentContent.appendChild(referenceContentContentText)
@@ -117,7 +118,7 @@ class Transcript {
             content.addClass("chatlog__messages")
             val authorName = document.createElement("span")
             authorName.addClass("chatlog__author-name")
-            authorName.attr("title", author.asTag)
+            authorName.attr("title", author.asMention)
             authorName.text(author.name)
             authorName.attr("data-user-id", author.id)
             content.appendChild(authorName)
@@ -139,7 +140,7 @@ class Transcript {
                 "title", "Message sent: "
                         + message.timeCreated.format(DateTimeFormatter.ofPattern("HH:mm:ss"))
             )
-            if (message.contentDisplay.length > 0) {
+            if (message.contentDisplay.isNotEmpty()) {
                 val messageContentContent = document.createElement("div")
                 messageContentContent.addClass("chatlog__content")
                 val messageContentContentMarkdown = document.createElement("div")
@@ -171,7 +172,7 @@ class Transcript {
                     }
                 }
             }
-            if (!message.attachments.isEmpty()) for (attach in message.attachments) {
+            if (message.attachments.isNotEmpty()) for (attach in message.attachments) {
                 val attachmentsDiv = document.createElement("div")
                 attachmentsDiv.addClass("chatlog__attachment")
                 val attachmentType = attach.fileExtension
@@ -235,7 +236,7 @@ class Transcript {
                 messageContent.appendChild(attachmentsDiv)
             }
             content.appendChild(messageContent)
-            if (!message.embeds.isEmpty()) for (embed in message.embeds) {
+            if (message.embeds.isNotEmpty()) for (embed in message.embeds) {
                 if (embed == null) continue
                 val embedDiv = document.createElement("div")
                 embedDiv.addClass("chatlog__embed")
@@ -260,7 +261,7 @@ class Transcript {
                     if (embed.author!!.iconUrl != null) {
                         val embedAuthorIcon = document.createElement("img")
                         embedAuthorIcon.addClass("chatlog__embed-author-icon")
-                        embedAuthorIcon.attr("src", embed.author!!.iconUrl)
+                        embed.author!!.iconUrl?.let { embedAuthorIcon.attr("src", it) }
                         embedAuthorIcon.attr("alt", "Author icon")
                         embedAuthorIcon.attr("loading", "lazy")
                         embedAuthor.appendChild(embedAuthorIcon)
@@ -270,10 +271,10 @@ class Transcript {
                     if (embed.author!!.url != null) {
                         val embedAuthorNameLink = document.createElement("a")
                         embedAuthorNameLink.addClass("chatlog__embed-author-name-link")
-                        embedAuthorNameLink.attr("href", embed.author!!.url)
-                        embedAuthorNameLink.text(embed.author!!.name)
+                        embed.author!!.url?.let { embedAuthorNameLink.attr("href", it) }
+                        embed.author!!.name?.let { embedAuthorNameLink.text(it) }
                         embedAuthorName.appendChild(embedAuthorNameLink)
-                    } else embedAuthorName.text(embed.author!!.name)
+                    } else embed.author!!.name?.let { embedAuthorName.text(it) }
                     embedAuthor.appendChild(embedAuthorName)
                     embedText.appendChild(embedAuthor)
                 }
@@ -283,7 +284,7 @@ class Transcript {
                     if (embed.url != null) {
                         val embedTitleLink = document.createElement("a")
                         embedTitleLink.addClass("chatlog__embed-title-link")
-                        embedTitleLink.attr("href", embed.url)
+                        embed.url?.let { embedTitleLink.attr("href", it) }
                         val embedTitleMarkdown = document.createElement("div")
                         embedTitleMarkdown.addClass("markdown preserve-whitespace")
                             .html(format(embed.title!!))
@@ -307,7 +308,7 @@ class Transcript {
                     embedDescription.appendChild(embedDescriptionMarkdown)
                     embedText.appendChild(embedDescription)
                 }
-                if (!embed.fields.isEmpty()) {
+                if (embed.fields.isNotEmpty()) {
                     val embedFields = document.createElement("div")
                     embedFields.addClass("chatlog__embed-fields")
                     for (field in embed.fields) {
@@ -317,7 +318,7 @@ class Transcript {
                         embedFieldName.addClass("chatlog__embed-field-name")
                         val embedFieldNameMarkdown = document.createElement("div")
                         embedFieldNameMarkdown.addClass("markdown preserve-whitespace")
-                        embedFieldNameMarkdown.html(field.name)
+                        field.name?.let { embedFieldNameMarkdown.html(it) }
                         embedFieldName.appendChild(embedFieldNameMarkdown)
                         embedField.appendChild(embedFieldName)
                         val embedFieldValue = document.createElement("div")
@@ -338,10 +339,10 @@ class Transcript {
                     embedThumbnail.addClass("chatlog__embed-thumbnail-container")
                     val embedThumbnailLink = document.createElement("a")
                     embedThumbnailLink.addClass("chatlog__embed-thumbnail-link")
-                    embedThumbnailLink.attr("href", embed.thumbnail!!.url)
+                    embed.thumbnail!!.url?.let { embedThumbnailLink.attr("href", it) }
                     val embedThumbnailImage = document.createElement("img")
                     embedThumbnailImage.addClass("chatlog__embed-thumbnail")
-                    embedThumbnailImage.attr("src", embed.thumbnail!!.url)
+                    embed.thumbnail!!.url?.let { embedThumbnailImage.attr("src", it) }
                     embedThumbnailImage.attr("alt", "Thumbnail")
                     embedThumbnailImage.attr("loading", "lazy")
                     embedThumbnailLink.appendChild(embedThumbnailImage)
@@ -354,10 +355,10 @@ class Transcript {
                     embedImage.addClass("chatlog__embed-image-container")
                     val embedImageLink = document.createElement("a")
                     embedImageLink.addClass("chatlog__embed-image-link")
-                    embedImageLink.attr("href", embed.image!!.url)
+                    embed.image!!.url?.let { embedImageLink.attr("href", it) }
                     val embedImageImage = document.createElement("img")
                     embedImageImage.addClass("chatlog__embed-image")
-                    embedImageImage.attr("src", embed.image!!.url)
+                    embed.image!!.url?.let { embedImageImage.attr("src", it) }
                     embedImageImage.attr("alt", "Image")
                     embedImageImage.attr("loading", "lazy")
                     embedImageLink.appendChild(embedImageImage)
@@ -370,17 +371,19 @@ class Transcript {
                     if (embed.footer!!.iconUrl != null) {
                         val embedFooterIcon = document.createElement("img")
                         embedFooterIcon.addClass("chatlog__embed-footer-icon")
-                        embedFooterIcon.attr("src", embed.footer!!.iconUrl)
+                        embed.footer!!.iconUrl?.let { embedFooterIcon.attr("src", it) }
                         embedFooterIcon.attr("alt", "Footer icon")
                         embedFooterIcon.attr("loading", "lazy")
                         embedFooter.appendChild(embedFooterIcon)
                     }
                     val embedFooterText = document.createElement("span")
                     embedFooterText.addClass("chatlog__embed-footer-text")
-                    embedFooterText.text(
-                        if (embed.timestamp != null) embed.footer!!.text + " • " + embed.timestamp!!
-                            .format(DateTimeFormatter.ofPattern("HH:mm:ss")) else embed.footer!!.text
-                    )
+                    (if (embed.timestamp != null) embed.footer!!.text + " • " + embed.timestamp!!
+                        .format(DateTimeFormatter.ofPattern("HH:mm:ss")) else embed.footer!!.text)?.let {
+                        embedFooterText.text(
+                            it
+                        )
+                    }
                     embedFooter.appendChild(embedFooterText)
                     embedContentContainer.appendChild(embedFooter)
                 }
