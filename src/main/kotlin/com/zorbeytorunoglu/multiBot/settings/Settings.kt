@@ -8,5 +8,8 @@ data class Settings(
     val disabledCaches: List<String> = listOf("VOICE_STATE"),
     val enabledCaches: List<String> = listOf("MEMBER_OVERRIDES"),
     val disabledIntents: List<String> = listOf("GUILD_MESSAGE_TYPING"),
-    val enabledIntents: List<String> = listOf("GUILD_MEMBERS")
+    val enabledIntents: List<String> = listOf("GUILD_MEMBERS"),
+    val tasksForumChannelName: String = "tasks",
+    val taskDateFormat: String = "dd-MM-yyyy"
+
 )
