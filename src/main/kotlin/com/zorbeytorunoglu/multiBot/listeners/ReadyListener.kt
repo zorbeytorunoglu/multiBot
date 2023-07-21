@@ -6,6 +6,7 @@ import com.zorbeytorunoglu.multiBot.commands.Listener
 import com.zorbeytorunoglu.multiBot.commands.configuration.CommandsConfigurationHandler
 import com.zorbeytorunoglu.multiBot.messages.MessagesHandler
 import com.zorbeytorunoglu.multiBot.permissions.PermissionManager
+import com.zorbeytorunoglu.multiBot.task.TaskManager
 import com.zorbeytorunoglu.multiBot.ticket.TicketManager
 import com.zorbeytorunoglu.multiBot.ticket.configuration.TicketConfigurationHandler
 import com.zorbeytorunoglu.multiBot.ticket.listeners.TicketButtonListener
@@ -25,6 +26,7 @@ class ReadyListener(private val bot: Bot): ListenerAdapter() {
         bot.permissionManager = PermissionManager()
         bot.commandsManager = CommandsManager(bot)
         bot.ticketHandler = TicketManager(TicketConfigurationHandler())
+        bot.taskManager = TaskManager(bot)
 
         bot.jda.addEventListener(
             Listener(bot),
