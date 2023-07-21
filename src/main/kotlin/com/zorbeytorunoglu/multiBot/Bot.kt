@@ -5,6 +5,7 @@ import com.zorbeytorunoglu.multiBot.commands.configuration.CommandsConfiguration
 import com.zorbeytorunoglu.multiBot.messages.MessagesHandler
 import com.zorbeytorunoglu.multiBot.permissions.PermissionManager
 import com.zorbeytorunoglu.multiBot.settings.SettingsHandler
+import com.zorbeytorunoglu.multiBot.task.TaskManager
 import com.zorbeytorunoglu.multiBot.ticket.TicketManager
 import net.dv8tion.jda.api.JDA
 
@@ -17,5 +18,6 @@ class Bot {
     lateinit var commandsManager: CommandsManager
     lateinit var ticketHandler: TicketManager
     lateinit var messagesHandler: MessagesHandler
+    lateinit var taskManager: TaskManager
 
 }
