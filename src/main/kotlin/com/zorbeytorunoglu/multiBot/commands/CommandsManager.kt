@@ -8,6 +8,7 @@ import com.zorbeytorunoglu.multiBot.commands.misc.RemindCommand
 import com.zorbeytorunoglu.multiBot.commands.misc.SayCommand
 import com.zorbeytorunoglu.multiBot.commands.misc.TranscriptCommand
 import com.zorbeytorunoglu.multiBot.commands.moderation.KickCommand
+import com.zorbeytorunoglu.multiBot.commands.task.TaskCommand
 import com.zorbeytorunoglu.multiBot.commands.ticket.TicketCommand
 import com.zorbeytorunoglu.multiBot.commands.ticket.TicketPanelCommand
 import kotlinx.coroutines.*
@@ -24,7 +25,8 @@ class CommandsManager(private val bot: Bot) {
         PermissionCommand(bot),
         SayCommand(bot),
         TicketCommand(bot),
-        TranscriptCommand(bot)
+        TranscriptCommand(bot),
+        TaskCommand(bot)
         )
 
     init {
