@@ -1,28 +1,17 @@
 package com.zorbeytorunoglu.multiBot.task
 
 import com.zorbeytorunoglu.multiBot.Bot
+import com.zorbeytorunoglu.multiBot.utils.Utils
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
-import java.text.SimpleDateFormat
 import java.util.*
 
 class Task(private val bot: Bot, val taskData: TaskData) {
 
-    val deadline: Date
-    val status: TaskStatus
-    val priority: TaskPriority
-
-    init {
-
-        val dateFormat = SimpleDateFormat(bot.settingsHandler.settings.taskDateFormat)
-        deadline = dateFormat.parse(taskData.deadline)
-
-        status = TaskStatus.valueOf(taskData.status)
-
-        priority = TaskPriority.valueOf(taskData.priority)
-
-    }
+    val deadline: Date? = if (taskData.deadline == null) null else bot.taskManager.taskDateFormat.parse(taskData.deadline)
+    val status: TaskStatus = TaskStatus.valueOf(taskData.status)
+    val priority: TaskPriority = TaskPriority.valueOf(taskData.priority)
 
     fun getChannel(): ThreadChannel? {
 
@@ -38,14 +27,22 @@ class Task(private val bot: Bot, val taskData: TaskData) {
 
     fun getWatchers(): List<Member> {
 
-        return validateMembers(taskData.watchers)
+        return if (taskData.watchers != null)
+            validateMembers(taskData.watchers)
+        else emptyList()
 
     }
 
     fun getAssignees(): List<Member> {
 
-        return validateMembers(taskData.assignees)
+        return if (taskData.assignees != null)
+            validateMembers(taskData.assignees)
+        else emptyList()
 
+    }
+
+    fun getTaskGiver(): Member? {
+        return getGuild()?.let { Utils.getMember(it, taskData.givenBy) }
     }
 
     private fun validateMembers(memberIds: Collection<String>): List<Member> {
