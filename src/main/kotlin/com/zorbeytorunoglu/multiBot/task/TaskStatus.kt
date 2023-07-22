@@ -4,6 +4,6 @@ enum class TaskStatus {
 
     IN_PROGRESS,
     OPEN,
-    CLOSED;
+    DONE;
 
 }
