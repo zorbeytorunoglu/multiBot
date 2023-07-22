@@ -35,6 +35,13 @@ data class Messages(
     val transcriptRetrievingMessages: String = "Retrieving messages...",
     val transcriptMessagesRetrieved: String = "Messages are retrieved, creating the transcript...",
     val transcriptGenerating: String = "Generating a transcript...",
-    val transcriptGenerated: String = "Transcript is generated!"
+    val transcriptGenerated: String = "Transcript is generated!",
+    val categoryNotFound: String = "Category with that ID could not be found.",
+    val noRoleSpecified: String = "No role is specified.",
+    val taskChannelExists: String = "There is already a task channel in that category.",
+    val taskChannelCreated: String = "Task channel %channel% has been created!",
+    val invalidHeadRole: String = "Invalid head role!",
+    val invalidChannel: String = "Invalid channel!",
+    val invalidDate: String = "Invalid date!"
 
 )
