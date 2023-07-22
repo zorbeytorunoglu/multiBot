@@ -42,6 +42,7 @@ data class Messages(
     val taskChannelCreated: String = "Task channel %channel% has been created!",
     val invalidHeadRole: String = "Invalid head role!",
     val invalidChannel: String = "Invalid channel!",
-    val invalidDate: String = "Invalid date!"
+    val invalidDate: String = "Invalid date!",
+    val taskCreated: String = "Task is created! Here it is: %channel%"
 
 )
