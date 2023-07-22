@@ -46,7 +46,7 @@ class CommandsManager(private val bot: Bot) {
 
         commands.forEach { command ->
 
-            delay(2000)
+            delay(2200)
 
             val data = Commands.slash(command.name, command.description)
             if (command.optionData().isNotEmpty())
