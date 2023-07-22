@@ -1,5 +1,9 @@
 package com.zorbeytorunoglu.multiBot.utils
 
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.Member
+import net.dv8tion.jda.api.entities.Mentions
+import net.dv8tion.jda.api.entities.Role
 import java.awt.Color
 
 object Utils {
@@ -20,6 +24,20 @@ object Utils {
             "LIGHT_GRAY" -> Color.LIGHT_GRAY
             else -> Color.ORANGE
         }
+    }
+
+    fun getRole(guild: Guild, string: String): Role? {
+        val roleId = string.takeIf { it.startsWith("<@") && it.endsWith(">") }?.substring(2, string.length - 1)
+        return roleId?.let { guild.getRoleById(it) } ?: guild.getRolesByName(string, true).firstOrNull() ?: guild.getRoleById(string)
+    }
+
+    fun getMember(guild: Guild, string: String): Member? {
+        val memberId = string.takeIf { it.startsWith("<@") && it.endsWith(">") }?.substring(2, string.length - 1)
+        return memberId?.let { guild.getMemberById(it) } ?: guild.getMembersByName(string, true).firstOrNull() ?: guild.getMemberById(string)
+    }
+
+    fun isRole(mention: Mentions): Boolean {
+        return mention.roles.isNotEmpty()
     }
 
 }
