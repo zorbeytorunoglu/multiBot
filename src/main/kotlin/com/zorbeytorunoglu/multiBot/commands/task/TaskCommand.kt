@@ -238,6 +238,18 @@ class TaskCommand(private val bot: Bot): Command {
                 editMessage.applyCreateData(edit).queue {
                     threadChannel.threadChannel.manager.setAppliedTags(tags).queue {
                         event.reply(bot.messagesHandler.messages.taskCreated.replace("%channel%",threadChannel.threadChannel.asMention)).queue()
+                        if (bot.settingsHandler.settings.dmAssignees) {
+
+                            if (assignees.isNotEmpty()) {
+                                assignees.forEach { member ->
+                                    member.user.openPrivateChannel().flatMap { it.sendMessage(
+                                        bot.messagesHandler.messages.assigneeNewTaskDm
+                                            .replace("%channel%", threadChannel.threadChannel.asMention)
+                                    ) }.queue()
+                                }
+                            }
+
+                        }
                     }
                 }
 
