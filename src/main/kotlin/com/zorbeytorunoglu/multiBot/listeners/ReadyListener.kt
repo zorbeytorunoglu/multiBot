@@ -25,6 +25,10 @@ class ReadyListener(private val bot: Bot): ListenerAdapter() {
         bot.commandsConfigurationHandler = CommandsConfigurationHandler()
         bot.permissionManager = PermissionManager()
         bot.commandsManager = CommandsManager(bot)
+
+        bot.jda.guilds.forEach {
+            it.loadMembers()
+        }
         bot.ticketHandler = TicketManager(TicketConfigurationHandler())
         bot.taskManager = TaskManager(bot)
 
@@ -32,10 +36,6 @@ class ReadyListener(private val bot: Bot): ListenerAdapter() {
             Listener(bot),
             TicketButtonListener(bot)
         )
-
-        bot.jda.guilds.forEach {
-            it.loadMembers()
-        }
 
     }
 
