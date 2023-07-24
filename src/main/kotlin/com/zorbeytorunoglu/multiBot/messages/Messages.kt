@@ -44,6 +44,12 @@ data class Messages(
     val invalidChannel: String = "Invalid channel!",
     val invalidDate: String = "Invalid date!",
     val taskCreated: String = "Task is created! Here it is: %channel%",
-    val assigneeNewTaskDm: String = "You have a new task! %channel%"
+    val assigneeNewTaskDm: String = "You have a new task! %channel%",
+    val taskEmbedDeadline: String = "Deadline",
+    val taskEmbedAssignees: String = "Assignees",
+    val taskEmbedGivenBy: String = "Given By",
+    val taskEmbedWatchers: String = "Watchers",
+    val taskEmbedPriority: String = "Priority",
+    val taskEmbedStatus: String = "Status"
 
 )
