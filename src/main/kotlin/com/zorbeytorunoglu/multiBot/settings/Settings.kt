@@ -19,7 +19,6 @@ data class Settings(
     val doneTag: String = "Done",
     val doneTagEmoji: String = "<:golub:1122534002599927920>",
     val nicknamesInTags: Boolean = false,
-    val taskForumChannelTopic: String = "Tasks will be posted here.",
     val dmAssignees: Boolean = true
 
 )
