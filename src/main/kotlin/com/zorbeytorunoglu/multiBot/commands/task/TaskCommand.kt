@@ -84,7 +84,7 @@ class TaskCommand(private val bot: Bot): Command {
             val roles = event.getOption("roles")!!.asString.split(",")
 
             val rolesList = roles.mapNotNull {
-                Utils.getRole(event.guild!!, removeSpaces(it))
+                Utils.getRole(event.guild!!, removeSpaces(it)!!)
             }
 
             if (rolesList.isEmpty()) {
@@ -95,7 +95,7 @@ class TaskCommand(private val bot: Bot): Command {
             val headRoles = event.getOption("heads")!!.asString.split(",")
 
             val headRolesList = headRoles.mapNotNull {
-                Utils.getRole(event.guild!!, removeSpaces(it))
+                Utils.getRole(event.guild!!, removeSpaces(it)!!)
             }
 
             if (headRolesList.isEmpty()) {
@@ -110,7 +110,8 @@ class TaskCommand(private val bot: Bot): Command {
 
             val action = category.createForumChannel(bot.settingsHandler.settings.tasksForumChannelName)
 
-            action.setTopic(bot.settingsHandler.settings.taskForumChannelTopic)
+            action.setTopic("taskChannel:${rolesList.joinToString(",") { it.id }}:" +
+                    headRolesList.joinToString(",") { it.id })
 
             action.addPermissionOverride(event.guild!!.publicRole, mutableListOf(), mutableListOf(Permission.VIEW_CHANNEL))
 
@@ -183,7 +184,7 @@ class TaskCommand(private val bot: Bot): Command {
             var assignees = listOf<Member>()
 
             if (assigneesString != null) {
-               assignees = assigneesString.mapNotNull { Utils.getMember(event.guild!!, removeSpaces(it)) }
+               assignees = assigneesString.mapNotNull { Utils.getMember(event.guild!!, removeSpaces(it)!!) }
             }
 
             val deadline = event.getOption("deadline")?.asString?.let { deadlineString ->
@@ -195,7 +196,7 @@ class TaskCommand(private val bot: Bot): Command {
                 }
             }
 
-            val watchersList = event.getOption("watchers")?.asString?.split(",")
+            val watchersList = removeSpaces(event.getOption("watchers")?.asString?.trim())?.split(",")
 
             var watchers = listOf<Member>()
 
@@ -219,7 +220,7 @@ class TaskCommand(private val bot: Bot): Command {
                 val taskData = TaskData(threadChannel.threadChannel.id, event.member!!.id, if (assignees.isEmpty()) null else assignees.map { it.id },
                     if (watchers.isEmpty()) null else watchers.map { it.id },
                     if (deadline == null) null else bot.taskManager.taskDateFormat.format(deadline),
-                    TaskStatus.OPEN.toString(), priority.toString(), channel.roles)
+                    TaskStatus.OPEN.toString(), priority.toString())
 
                 val task = Task(bot, taskData)
 
@@ -259,8 +260,8 @@ class TaskCommand(private val bot: Bot): Command {
 
     }
 
-    private fun removeSpaces(input: String): String {
-        return input.replace("\\s".toRegex(), "")
+    private fun removeSpaces(input: String?): String? {
+        return input?.replace("\\s".toRegex(), "")
     }
 
 }
