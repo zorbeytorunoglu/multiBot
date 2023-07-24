@@ -7,6 +7,5 @@ data class TaskData(
     val watchers: Collection<String>?,
     val deadline: String?,
     val status: String,
-    val priority: String,
-    val departmentRoles: Collection<String>
+    val priority: String
 )
