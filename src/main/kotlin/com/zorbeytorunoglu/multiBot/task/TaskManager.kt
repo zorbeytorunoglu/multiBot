@@ -6,6 +6,8 @@ import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.MessageEmbed
+import net.dv8tion.jda.api.entities.Role
+import net.dv8tion.jda.api.entities.channel.ChannelType
 import net.dv8tion.jda.api.entities.channel.concrete.Category
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
@@ -13,7 +15,9 @@ import net.dv8tion.jda.api.entities.channel.forums.ForumTag
 import net.dv8tion.jda.api.entities.channel.forums.ForumTagData
 import net.dv8tion.jda.api.entities.channel.forums.ForumTagSnowflake
 import net.dv8tion.jda.api.entities.channel.unions.GuildChannelUnion
+import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion
 import net.dv8tion.jda.api.entities.emoji.Emoji
+import okhttp3.internal.wait
 import java.awt.Color
 import java.text.SimpleDateFormat
 
@@ -41,7 +45,7 @@ class TaskManager(private val bot: Bot) {
 
     init {
 
-        println("${loadTaskChannels()} task channels are loaded.")
+        println("${loadTaskChannels().size} task channels are loaded.")
 
         CoroutineScope(Dispatchers.IO).launch {
 
@@ -51,13 +55,13 @@ class TaskManager(private val bot: Bot) {
 
     }
 
-    fun loadTaskChannels(): Int {
+    private fun loadTaskChannels(): List<TaskChannel> {
 
-        if (bot.jda.guilds.isEmpty()) return 0
+        if (bot.jda.guilds.isEmpty()) return emptyList()
 
         val preSetName = bot.settingsHandler.settings.tasksForumChannelName
 
-        var loadedChannels = 0
+        val loadedChannels = mutableListOf<TaskChannel>()
 
         for (guild in bot.jda.guilds) {
 
@@ -80,8 +84,9 @@ class TaskManager(private val bot: Bot) {
                 val headRoles = topic[2].split(",").filter { forumChannel.guild.getRoleById(it) != null }
 
                 if (roles.isNotEmpty() && headRoles.isNotEmpty()) {
-                    taskChannels.add(TaskChannel(forumChannel.id, roles, headRoles))
-                    loadedChannels++
+                    val taskChannel = TaskChannel(forumChannel.id, roles, headRoles)
+                    taskChannels.add(taskChannel)
+                    loadedChannels.add(taskChannel)
                 }
 
             }
@@ -119,7 +124,7 @@ class TaskManager(private val bot: Bot) {
 //
 //    }
 
-    suspend fun loadTasks(): Int = coroutineScope {
+    private suspend fun loadTasks(): Int = coroutineScope {
         if (taskChannels.isEmpty()) return@coroutineScope 0
 
         val tasksDeferred = mutableListOf<Deferred<Int>>()
@@ -152,7 +157,7 @@ class TaskManager(private val bot: Bot) {
 
     }
 
-    fun getTaskDataFromEmbed(threadChannel: ThreadChannel, messageEmbed: MessageEmbed): TaskData? {
+    private fun getTaskDataFromEmbed(threadChannel: ThreadChannel, messageEmbed: MessageEmbed): TaskData? {
 
         if (messageEmbed.fields.isEmpty()) return null
 
@@ -195,9 +200,21 @@ class TaskManager(private val bot: Bot) {
 
     }
 
+    fun getTask(bot: Bot, channel: MessageChannelUnion): Task? {
+
+        if (channel.type != ChannelType.GUILD_PRIVATE_THREAD && channel.type != ChannelType.GUILD_PUBLIC_THREAD)
+            return null
+
+        if (channel.asThreadChannel().ownerId != bot.jda.selfUser.id) return null
+
+        return bot.taskManager.taskChannels
+            .flatMap { it.tasks }
+            .firstOrNull { it.taskData.taskId == channel.id }
+
+    }
+
     fun getTaskChannel(id: String): TaskChannel? {
-        if (taskChannels.isEmpty()) return null
-        return taskChannels.firstOrNull { it.channelId == id }
+        return taskChannels.find { it.channelId == id }
     }
 
     fun getTaskChannel(task: Task): TaskChannel? {
@@ -218,6 +235,22 @@ class TaskManager(private val bot: Bot) {
         return taskChannels.find { channel.id == it.channelId }
     }
 
+    fun getTaskChannel(role: Role): TaskChannel? {
+        return taskChannels.find { taskChannel ->
+            taskChannel.roles.contains(role.id)
+        }
+    }
+
+    fun getTaskChannel(forumChannel: ForumChannel): TaskChannel? {
+        return taskChannels.find { it.channelId == forumChannel.id }
+    }
+
+    fun getTaskChannel(member: Member): TaskChannel? {
+        if (member.roles.isEmpty()) return null
+        val roleIds = member.roles.mapTo(HashSet()) { it.id }
+        return taskChannels.firstOrNull { channel -> channel.roles.any { roleIds.contains(it) } }
+    }
+
     fun taskForumExists(category: Category): Boolean {
 
         return category.forumChannels.any { it.name == bot.settingsHandler.settings.tasksForumChannelName }
@@ -230,19 +263,64 @@ class TaskManager(private val bot: Bot) {
 
         val tags: MutableList<ForumTagData> = mutableListOf()
 
+        val channel = taskChannel.getChannel(guild)!!
+
         tags.addAll(defaultTagsData)
 
-        guild.getMembersWithRoles(taskChannel.getRoles(guild)).forEach {
+        taskChannel.getRoles(guild).forEach { role ->
 
-            val name = if (bot.settingsHandler.settings.nicknamesInTags && it.nickname != null)
-                it.nickname!! else it.effectiveName
+            guild.getMembersWithRoles(role).forEach { it ->
 
-            tags.add(ForumTagData(it.id).setName(name))
+                val name = if (bot.settingsHandler.settings.nicknamesInTags && it.nickname != null)
+                    it.nickname!! else it.effectiveName
+
+                if (!tags.any { it.name == name }) {
+                    tags.add(ForumTagData(it.id).setName(name))
+                }
+
+            }
 
         }
 
-        taskChannel.getChannel(guild)!!.manager.setAvailableTags(tags).queue {
-            deferred.complete(Unit)
+        val appliedTags = HashMap<String, List<ForumTagData>>()
+
+        channel.threadChannels.forEach { threadChannel ->
+
+            if (threadChannel.appliedTags.isNotEmpty()) {
+
+                val tagList = threadChannel.appliedTags.map {
+                    ForumTagData(it.name)
+                }
+
+                appliedTags[threadChannel.id] = tagList
+
+            }
+
+        }
+
+        channel.manager.setAvailableTags(tags).queue {
+
+            val newTagIds = channel.availableTags.associate { it.name to it.id }
+
+            channel.threadChannels.forEach { threadChannel ->
+
+                if (appliedTags.containsKey(threadChannel.id)) {
+
+                    val toSnowflake = mutableListOf<ForumTagSnowflake>()
+
+                    appliedTags[threadChannel.id]!!.map {
+                        toSnowflake.add(ForumTagSnowflake.fromId(newTagIds[it.name]!!))
+                    }
+
+                    threadChannel.manager.setAppliedTags(toSnowflake).queue()
+
+                    if (channel.threadChannels.last() == threadChannel)
+                        deferred.complete(Unit)
+
+                }
+
+            }
+
         }
 
         return deferred
@@ -317,6 +395,57 @@ class TaskManager(private val bot: Bot) {
             TaskStatus.OPEN -> forumChannel.availableTags.firstOrNull { it.name == bot.settingsHandler.settings.openTag }
             TaskStatus.IN_PROGRESS -> forumChannel.availableTags.firstOrNull { it.name == bot.settingsHandler.settings.inProgressTag }
             TaskStatus.DONE -> forumChannel.availableTags.firstOrNull { it.name == bot.settingsHandler.settings.doneTag }
+        }
+
+    }
+
+    fun getTaskCount(taskChannel: TaskChannel): Int {
+
+        return taskChannel.tasks.size
+
+    }
+
+    fun getTaskCount(role: Role): Int {
+
+        val taskChannel = getTaskChannel(role) ?: return 0
+
+        return taskChannel.tasks.size
+
+    }
+
+    fun getTaskCount(forumChannel: ForumChannel): Int {
+        val taskChannel = getTaskChannel(forumChannel) ?: return 0
+        return taskChannel.tasks.size
+    }
+
+    fun getTaskCount(member: Member): Int {
+        return getTaskChannel(member)?.let { taskChannel ->
+            taskChannel.tasks.count { it.taskData.assignees?.contains(member.id) == true }
+        } ?: 0
+    }
+
+    fun getTaskCount(): Int {
+
+        if (taskChannels.isEmpty()) return 0
+
+        var taskCount = 0
+
+        taskChannels.forEach {
+            taskCount += it.tasks.size
+        }
+
+        return taskCount
+
+    }
+
+    fun refreshTaskEmbed(threadChannel: ThreadChannel, task: Task) {
+
+        threadChannel.retrieveStartMessage().queue { startMessage ->
+
+            val embed = startMessage.embeds[0]
+
+            startMessage.editMessageEmbeds(generateTaskEmbed(embed.title!!, embed.description!!, task).build()).queue()
+
         }
 
     }
