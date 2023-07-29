@@ -9,9 +9,9 @@ import java.util.*
 
 class Task(private val bot: Bot, val taskData: TaskData) {
 
-    val deadline: Date? = if (taskData.deadline == null) null else bot.taskManager.taskDateFormat.parse(taskData.deadline)
-    val status: TaskStatus = TaskStatus.valueOf(taskData.status)
-    val priority: TaskPriority = TaskPriority.valueOf(taskData.priority)
+    var deadline: Date? = if (taskData.deadline == null) null else bot.taskManager.taskDateFormat.parse(taskData.deadline)
+    var status: TaskStatus = TaskStatus.valueOf(taskData.status)
+    var priority: TaskPriority = TaskPriority.valueOf(taskData.priority)
 
     fun getChannel(): ThreadChannel? {
 
@@ -28,7 +28,7 @@ class Task(private val bot: Bot, val taskData: TaskData) {
     fun getWatchers(): List<Member> {
 
         return if (taskData.watchers != null)
-            validateMembers(taskData.watchers)
+            validateMembers(taskData.watchers!!)
         else emptyList()
 
     }
@@ -36,7 +36,7 @@ class Task(private val bot: Bot, val taskData: TaskData) {
     fun getAssignees(): List<Member> {
 
         return if (taskData.assignees != null)
-            validateMembers(taskData.assignees)
+            validateMembers(taskData.assignees!!)
         else emptyList()
 
     }
