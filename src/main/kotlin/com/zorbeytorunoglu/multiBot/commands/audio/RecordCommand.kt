@@ -43,7 +43,7 @@ class RecordCommand(private val bot: Bot): Command {
 
         if (event.subcommandName == "start") {
 
-            var channel: GuildChannelUnion
+            val channel: GuildChannelUnion
 
             if (event.getOption("channel") != null) {
                 channel = event.getOption("channel")!!.asChannel
