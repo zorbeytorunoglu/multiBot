@@ -36,6 +36,14 @@ object Utils {
         return memberId?.let { guild.getMemberById(it) } ?: guild.getMembersByName(string, true).firstOrNull() ?: guild.getMemberById(string)
     }
 
+    fun getMembers(guild: Guild, members: List<String>): List<Member> {
+        return members.mapNotNull { getMember(guild, it) }
+    }
+
+    fun getRoles(guild: Guild, roles: List<String>): List<Role> {
+        return roles.mapNotNull { getRole(guild, it) }
+    }
+
     fun isRole(mention: Mentions): Boolean {
         return mention.roles.isNotEmpty()
     }
