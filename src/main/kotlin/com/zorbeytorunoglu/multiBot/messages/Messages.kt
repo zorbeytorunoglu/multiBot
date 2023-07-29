@@ -42,7 +42,7 @@ data class Messages(
     val taskChannelCreated: String = "Task channel %channel% has been created!",
     val invalidHeadRole: String = "Invalid head role!",
     val invalidChannel: String = "Invalid channel!",
-    val invalidDate: String = "Invalid date!",
+    val invalidDate: String = "Invalid date! Remember the format: dd-MM-yyyy",
     val taskCreated: String = "Task is created! Here it is: %channel%",
     val assigneeNewTaskDm: String = "You have a new task! %channel%",
     val taskEmbedDeadline: String = "Deadline",
@@ -50,6 +50,21 @@ data class Messages(
     val taskEmbedGivenBy: String = "Given By",
     val taskEmbedWatchers: String = "Watchers",
     val taskEmbedPriority: String = "Priority",
-    val taskEmbedStatus: String = "Status"
+    val taskEmbedStatus: String = "Status",
+    val taskChannelNotFound: String = "Task channel could not be found.",
+    val refreshedTags: String = "Tags are refreshed!",
+    val taskSetMembersNotFound: String = "Members to be assignees could not be found from the value. Remember to separate them with ','",
+    val taskNotFound: String = "Task could not be found.",
+    val assigneeSet: String = "Assignees are updated!",
+    val invalidStatus: String = "Invalid status! Your options: 'in progress, open, done'",
+    val deadlineSet: String = "Deadline is set!",
+    val statusSet: String = "Status set!",
+    val watcherSet: String = "Watchers are set!",
+    val taskSetWatchersNotFound: String = "Members to be watchers could not be found from the value. Remember to separate them with ','",
+    val prioritySet: String = "Priority is set!",
+    val taskChannelHeadsSet: String = "Task channel heads are set!",
+    val totalTaskCount: String = "Total task count is **%count%**",
+    val taskCountMember: String = "Task count of %member% is **%count%**",
+    val taskCountChannel: String = "Task count of %channel% is **%count%**"
 
 )
