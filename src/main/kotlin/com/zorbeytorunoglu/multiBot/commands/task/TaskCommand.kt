@@ -4,9 +4,7 @@ import com.zorbeytorunoglu.multiBot.Bot
 import com.zorbeytorunoglu.multiBot.commands.Command
 import com.zorbeytorunoglu.multiBot.task.*
 import com.zorbeytorunoglu.multiBot.utils.Utils
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.channel.forums.ForumTagData
@@ -40,18 +38,34 @@ class TaskCommand(private val bot: Bot): Command {
     // /task set deadline <deadline>
     // /task set watcher <members>
     // /task set priority <priority>
+    // /task set head <role>
+    // /task count <role>
 
     // /task setup <category> <roles>
 
     override fun subcommandData(): Collection<SubcommandData> {
 
-        val priorityChoices = mutableListOf<Choice>()
+        val priorityChoices = TaskPriority.values().map {
+            Choice(it.name, it.name)
+        }
 
-        TaskPriority.values().forEach {
-            priorityChoices.add(Choice(it.name, it.name))
+        val setSubCommandsChoices = listOf("status", "assignee", "deadline", "watcher", "priority").map {
+            Choice(it, it)
         }
 
         return listOf(
+            SubcommandData("count", "Gets the task count.")
+                .addOptions(
+                    OptionData(OptionType.CHANNEL, "channel", "Task channel", false, false),
+                    OptionData(OptionType.USER, "member", "Member", false, false),
+                    OptionData(OptionType.ROLE,"role", "Role", false, false)
+                ),
+            SubcommandData("delete","Deletes the task."),
+            SubcommandData("set", "Set a value in a task.")
+                .addOptions(OptionData(OptionType.STRING, "key", "Key", true, false)
+                    .addChoices(setSubCommandsChoices),
+                    OptionData(OptionType.STRING, "value", "Value", true, false)
+                ),
             SubcommandData("setup", "Sets up a task channel for a role/department.")
                 .addOptions(
                     OptionData(OptionType.STRING,"category", "ID of the category.", true, false),
@@ -68,11 +82,211 @@ class TaskCommand(private val bot: Bot): Command {
                     OptionData(OptionType.STRING, "watchers", "Watchers", false, false),
                     OptionData(OptionType.STRING, "priority", "Priority", false, false)
                         .addChoices(priorityChoices)
-                )
+                ),
+            SubcommandData("refreshtags", "Refreshes tags.").addOptions(
+                OptionData(OptionType.CHANNEL, "channel", "Task channel", true, false)
+            )
         )
     }
 
     override fun execute(event: SlashCommandInteractionEvent) {
+
+        if (event.subcommandName == "count") {
+
+            if (event.options.isEmpty()) {
+
+                event.channel.sendMessage(bot.messagesHandler.messages.totalTaskCount.replace(
+                    "%count", "${bot.taskManager.getTaskCount()}")).queue()
+
+                return
+
+            }
+
+            if (event.getOption("member") != null) {
+
+                val member = event.guild!!.getMember(event.getOption("member")!!.asUser)!!
+
+                event.channel.sendMessage(bot.messagesHandler.messages.taskCountMember
+                    .replace("%member%", member.asMention)
+                    .replace("%count%", "${bot.taskManager.getTaskCount(member)}")).queue()
+
+                return
+
+            } else if (event.getOption("channel") != null) {
+
+                val channel = event.getOption("channel")!!.asChannel
+
+                val taskChannel = bot.taskManager.getTaskChannel(channel) ?: run {
+                    event.channel.sendMessage(bot.messagesHandler.messages.taskChannelNotFound).queue()
+                    return
+                }
+
+                event.channel.sendMessage(bot.messagesHandler.messages.taskCountChannel
+                    .replace("%channel%", channel.asMention)
+                    .replace("%count%", "${bot.taskManager.getTaskCount(taskChannel)}")).queue()
+
+                return
+
+            }
+
+        }
+
+        if (event.subcommandName == "set") {
+
+            val key = event.getOption("key")!!.asString
+
+            val value = event.getOption("value")!!.asString
+
+            val task = bot.taskManager.getTask(bot, event.channel) ?: run {
+                event.channel.sendMessage(bot.messagesHandler.messages.taskNotFound).queue()
+                return
+            }
+
+            if (key == "assignee") {
+
+                val members = Utils.getMembers(event.guild!!, removeSpaces(value)!!.split(","))
+
+                if (members.isEmpty()) {
+                    event.channel.sendMessage(bot.messagesHandler.messages.taskSetMembersNotFound).queue()
+                    return
+                }
+
+                task.taskData.assignees = members.map { it.id }
+
+                bot.taskManager.refreshTaskEmbed(event.channel.asThreadChannel(), task)
+
+                event.channel.sendMessage(bot.messagesHandler.messages.assigneeSet).queue()
+
+                return
+
+            }
+
+            if (key == "status") {
+
+                val status: TaskStatus = if (value.equals("in progress", true)) {
+                    TaskStatus.IN_PROGRESS
+                } else if (value.equals("open", true)) {
+                    TaskStatus.OPEN
+                } else if (value.equals("done", true)) {
+                    TaskStatus.DONE
+                } else {
+                    event.channel.sendMessage(bot.messagesHandler.messages.invalidStatus).queue()
+                    return
+                }
+
+                task.taskData.status = status.toString()
+                task.status = status
+
+                bot.taskManager.refreshTaskEmbed(event.channel.asThreadChannel(), task)
+
+                event.channel.sendMessage(bot.messagesHandler.messages.statusSet).queue()
+
+                return
+
+            }
+
+            if (key == "deadline") {
+
+                val date = try {
+                    bot.taskManager.taskDateFormat.parse(value)
+                } catch (e: ParseException) {
+                    e.printStackTrace()
+                    event.channel.sendMessage(bot.messagesHandler.messages.invalidDate).queue()
+                    return
+                }
+
+                task.deadline = date
+                task.taskData.deadline = value
+
+                bot.taskManager.refreshTaskEmbed(event.channel.asThreadChannel(), task)
+
+                event.channel.sendMessage(bot.messagesHandler.messages.deadlineSet).queue()
+
+                return
+
+            }
+
+            if (key == "watcher") {
+
+                val watchers = Utils.getMembers(event.guild!!, removeSpaces(value)!!.split(","))
+
+                if (watchers.isEmpty()) {
+                    event.channel.sendMessage(bot.messagesHandler.messages.taskSetWatchersNotFound).queue()
+                } else {
+                    task.taskData.assignees = watchers.map { it.id }
+
+                    bot.taskManager.refreshTaskEmbed(event.channel.asThreadChannel(), task)
+
+                    event.channel.sendMessage(bot.messagesHandler.messages.watcherSet).queue()
+                }
+
+                return
+
+            }
+
+            if (key == "priority") {
+
+                val priority: TaskPriority = if (value.equals("low", true)) {
+                    TaskPriority.LOW
+                } else if (value.equals("normal", true)) {
+                    TaskPriority.NORMAL
+                } else if (value.equals("high", true)) {
+                    TaskPriority.HIGH
+                } else if (value.equals("urgent", true)) {
+                    TaskPriority.URGENT
+                } else {
+                    event.channel.sendMessage(bot.messagesHandler.messages.invalidStatus).queue()
+                    return
+                }
+
+                task.taskData.priority = priority.toString()
+                task.priority = priority
+
+                bot.taskManager.refreshTaskEmbed(event.channel.asThreadChannel(), task)
+
+                event.channel.sendMessage(bot.messagesHandler.messages.prioritySet).queue()
+
+                return
+
+            }
+
+            if (key == "head") {
+
+                val roles = Utils.getRoles(event.guild!!, removeSpaces(value)!!.split(","))
+
+                if (roles.isEmpty()) {
+                    event.channel.sendMessage(bot.messagesHandler.messages.invalidHeadRole)
+                    return
+                }
+
+                val taskChannel = bot.taskManager.getTaskChannel(task) ?: run {
+                    event.channel.sendMessage(bot.messagesHandler.messages.taskChannelNotFound).queue()
+                    return
+                }
+
+                taskChannel.headRoleIds = roles.map { it.id }
+
+                event.channel.sendMessage(bot.messagesHandler.messages.taskChannelHeadsSet).queue()
+
+                return
+
+            }
+
+        }
+
+        if (event.subcommandName == "refreshtags") {
+
+            val channel = bot.taskManager.getTaskChannel(event.getOption("channel")!!.asChannel) ?: run {
+                event.channel.sendMessage(bot.messagesHandler.messages.taskChannelNotFound).queue()
+                return
+            }
+
+            runBlocking {
+                bot.taskManager.refreshTags(bot,event.guild!!,channel).await()
+                event.channel.sendMessage(bot.messagesHandler.messages.refreshedTags).queue()
+            }
+
+        }
 
         if (event.subcommandName == "setup") {
 
@@ -147,7 +361,8 @@ class TaskCommand(private val bot: Bot): Command {
                         val name = if (nicknameInTags && member.nickname != null) member.nickname!! else
                             member.effectiveName
 
-                        tags.add(ForumTagData(member.id).setName(name))
+                        if (!tags.any { it.name == name })
+                            tags.add(ForumTagData(member.id).setName(name))
 
                     }
 
@@ -163,8 +378,6 @@ class TaskCommand(private val bot: Bot): Command {
             }
 
         }
-
-        // /task create <channel> <title> <description> <assignee> <deadline> <watchers>
 
         if (event.subcommandName == "create") {
 
@@ -208,13 +421,6 @@ class TaskCommand(private val bot: Bot): Command {
 
             val forumPostAction = channel.getChannel(event.guild!!)!!.createForumPost(title, MessageCreateData.fromContent("null"))
 
-            CoroutineScope(Dispatchers.Default).launch {
-                bot.taskManager.refreshTags(bot,event.guild!!,channel).await()
-                forumPostAction.setTags(bot.taskManager.getAssigneesAsTags(
-                    bot.settingsHandler.settings.nicknamesInTags,forumPostAction.channel,assignees
-                ))
-            }
-
             forumPostAction.queue { threadChannel ->
 
                 val taskData = TaskData(threadChannel.threadChannel.id, event.member!!.id, if (assignees.isEmpty()) null else assignees.map { it.id },
@@ -255,6 +461,24 @@ class TaskCommand(private val bot: Bot): Command {
                 }
 
             }
+
+        }
+
+        if (event.subcommandName == "delete") {
+
+            val task = bot.taskManager.getTask(bot, event.channel) ?: run {
+                event.channel.sendMessage(bot.messagesHandler.messages.taskNotFound).queue()
+                return
+            }
+
+            val taskChannel = bot.taskManager.getTaskChannel(task) ?: run {
+                event.channel.sendMessage(bot.messagesHandler.messages.taskNotFound).queue()
+                return
+            }
+
+            taskChannel.tasks.remove(task)
+
+            event.channel.delete().queue()
 
         }
 
