@@ -5,7 +5,7 @@ import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Role
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel
 
-class TaskChannel(val channelId: String, val roles: Collection<String>, val headRoleIds: Collection<String>) {
+class TaskChannel(val channelId: String, val roles: Collection<String>, var headRoleIds: Collection<String>) {
 
     val tasks: ArrayList<Task> = ArrayList()
 
