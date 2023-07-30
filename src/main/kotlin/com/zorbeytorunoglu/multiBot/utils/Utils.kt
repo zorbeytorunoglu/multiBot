@@ -27,7 +27,7 @@ object Utils {
     }
 
     fun getRole(guild: Guild, string: String): Role? {
-        val roleId = string.takeIf { it.startsWith("<@") && it.endsWith(">") }?.substring(2, string.length - 1)
+        val roleId = string.takeIf { it.startsWith("<@&") && it.endsWith(">") }?.substring(3, string.length - 1)
         return roleId?.let { guild.getRoleById(it) } ?: guild.getRolesByName(string, true).firstOrNull() ?: guild.getRoleById(string)
     }
 
