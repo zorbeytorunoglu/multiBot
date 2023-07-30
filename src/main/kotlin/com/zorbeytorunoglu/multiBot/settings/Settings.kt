@@ -13,12 +13,16 @@ data class Settings(
     val tasksForumChannelName: String = "tasks",
     val taskDateFormat: String = "dd-MM-yyyy",
     val inProgressTag: String = "In Progress",
-    val inProgressTagEmoji: String = "<:golub:1122534002599927920>",
+    val inProgressTagEmoji: String = "<:task_in_progress:1134968344181735484>",
     val openTag: String = "Open",
-    val openTagEmoji: String = "<:golub:1122534002599927920>",
+    val openTagEmoji: String = "<:task_folder:1134968339429593180>",
     val doneTag: String = "Done",
-    val doneTagEmoji: String = "<:golub:1122534002599927920>",
+    val doneTagEmoji: String = "<:task_done:1134968342319464478>",
     val nicknamesInTags: Boolean = false,
-    val dmAssignees: Boolean = true
+    val dmAssignees: Boolean = true,
+    val scheduledDeadlineCheck: Boolean = true,
+    val deadlineCheckDelayHour: Int = 24,
+    val notifyAssigneesPassedDeadline: Boolean = true,
+    val notifyWatchersPassedDeadline: Boolean = true
 
 )
