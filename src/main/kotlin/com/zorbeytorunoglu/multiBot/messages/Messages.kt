@@ -65,6 +65,24 @@ data class Messages(
     val taskChannelHeadsSet: String = "Task channel heads are set!",
     val totalTaskCount: String = "Total task count is **%count%**",
     val taskCountMember: String = "Task count of %member% is **%count%**",
-    val taskCountChannel: String = "Task count of %channel% is **%count%**"
+    val taskCountChannel: String = "Task count of %channel% is **%count%**",
+    val taskCountRole: String = "Task count of %role% is **%count%**",
+    val wrongCountUsage: String = "You have used the command wrong!",
+    val taskCountStatusMentionable: String = "Task count of %mentionable% with the status of __%status%__ is **%count%**",
+    val all: String = "ALL",
+    val notHead: String = "You do not have the needed __head__ role to create task there.",
+    val deadlinePast: String = "The task has passed the deadline! %mentions%",
+    val notifyAssigneePassedDeadline: String = "Your task has passed the deadline! %channel%",
+    val notifyWatchersPassedDeadline: String = "A task that you are a watcher of has passed the deadline! %channel%",
+    val taskEmbedCompletionDate: String = "Completion Date",
+    val markedDone: String = "Task has been marked as complete by %member% on **%date%**",
+    val invalidAssignees: String = "Invalid assignees! You can use mentions, IDs or effective names only. Do not forget to separate them with ',' if you want to have multiple assignees.",
+    val statsTitle: String = "Task stats of **%member%**",
+    val statsTotalCompleted: String = "Total completed tasks: %count%",
+    val statsCompletedOnTime: String = "Tasks completed on time: %count%",
+    val statsDelayedTasks: String = "Tasks completed post deadline: %count%",
+    val statsActiveTasks: String = "Open tasks: %count%",
+    val statsInProgressTasks: String = "Tasks in progress: %count%",
+    val wrongStatsUsage: String = "Incorrect usage! You must choose a role or a member."
 
 )
