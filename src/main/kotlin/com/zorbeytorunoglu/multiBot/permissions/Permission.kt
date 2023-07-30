@@ -14,6 +14,10 @@ enum class Permission {
     RECORD,
     PERMISSION,
     SAY,
-    TRANSCRIPT;
+    TRANSCRIPT,
+    TASK_SETUP,
+    TASK_REFRESH_TAGS,
+    TASK_DELETE,
+    TASK_SET
 
 }
