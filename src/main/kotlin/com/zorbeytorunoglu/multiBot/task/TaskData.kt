@@ -7,5 +7,6 @@ data class TaskData(
     var watchers: Collection<String>?,
     var deadline: String?,
     var status: String,
-    var priority: String
+    var priority: String,
+    var completionDate: String?
 )
