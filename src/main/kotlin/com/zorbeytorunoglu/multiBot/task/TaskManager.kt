@@ -17,9 +17,9 @@ import net.dv8tion.jda.api.entities.channel.forums.ForumTagSnowflake
 import net.dv8tion.jda.api.entities.channel.unions.GuildChannelUnion
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion
 import net.dv8tion.jda.api.entities.emoji.Emoji
-import okhttp3.internal.wait
 import java.awt.Color
 import java.text.SimpleDateFormat
+import java.util.Date
 
 class TaskManager(private val bot: Bot) {
 
@@ -52,6 +52,9 @@ class TaskManager(private val bot: Bot) {
             println("${loadTasks()} tasks are loaded.")
 
         }
+
+        if (bot.settingsHandler.settings.scheduledDeadlineCheck)
+            startDeadlineCheck()
 
     }
 
@@ -97,33 +100,6 @@ class TaskManager(private val bot: Bot) {
 
     }
 
-//    fun loadTasks() {
-//
-//        if (taskChannels.isEmpty()) return
-//
-//        for (taskChannel in taskChannels) {
-//
-//            val forumChannel = bot.jda.getForumChannelById(taskChannel.channelId) ?: continue
-//
-//            if (forumChannel.threadChannels.isEmpty()) continue
-//
-//            for (threadChannel in forumChannel.threadChannels) {
-//
-//                threadChannel.retrieveStartMessage().queue {
-//
-//                    if (it.embeds.isNotEmpty()) {
-//                        val taskData = getTaskDataFromEmbed(threadChannel, it.embeds[0])
-//                        if (taskData != null) taskChannel.tasks.add(Task(bot, taskData))
-//                    }
-//
-//                }
-//
-//            }
-//
-//        }
-//
-//    }
-
     private suspend fun loadTasks(): Int = coroutineScope {
         if (taskChannels.isEmpty()) return@coroutineScope 0
 
@@ -168,6 +144,7 @@ class TaskManager(private val bot: Bot) {
         val taskId: String = threadChannel.id
         var status: String? = null
         var priority: String? = null
+        var completionDate: String? = null
 
         for (field in messageEmbed.fields) {
             when (field.name) {
@@ -185,12 +162,13 @@ class TaskManager(private val bot: Bot) {
                 }
                 bot.messagesHandler.messages.taskEmbedStatus -> status = field.value!!.replace(" ", "_")
                 bot.messagesHandler.messages.taskEmbedPriority -> priority = field.value!!.replace(" ", "_")
+                bot.messagesHandler.messages.taskEmbedCompletionDate -> completionDate = field.value
             }
         }
 
         return if (givenBy == null || status == null || priority == null)
             null
-        else TaskData(taskId,givenBy, assignees, watchers, deadline, status, priority)
+        else TaskData(taskId,givenBy, assignees, watchers, deadline, status, priority, completionDate)
 
     }
 
@@ -207,9 +185,7 @@ class TaskManager(private val bot: Bot) {
 
         if (channel.asThreadChannel().ownerId != bot.jda.selfUser.id) return null
 
-        return bot.taskManager.taskChannels
-            .flatMap { it.tasks }
-            .firstOrNull { it.taskData.taskId == channel.id }
+        return bot.taskManager.taskChannels.flatMap { it.tasks }.find { it.taskData.taskId == channel.id }
 
     }
 
@@ -386,6 +362,12 @@ class TaskManager(private val bot: Bot) {
                 bot.messagesHandler.messages.taskEmbedGivenBy, taskGiver.asMention, true))
         }
 
+        val completionDate = task.taskData.completionDate
+        if (completionDate != null)
+            builder.addField(
+                MessageEmbed.Field(bot.messagesHandler.messages.taskEmbedCompletionDate,
+                completionDate, true))
+
         return builder
     }
 
@@ -397,6 +379,10 @@ class TaskManager(private val bot: Bot) {
             TaskStatus.DONE -> forumChannel.availableTags.firstOrNull { it.name == bot.settingsHandler.settings.doneTag }
         }
 
+    }
+
+    fun getTaskCount(taskChannel: TaskChannel, status: TaskStatus): Int {
+        return taskChannel.tasks.count { it.status == status }
     }
 
     fun getTaskCount(taskChannel: TaskChannel): Int {
@@ -413,9 +399,19 @@ class TaskManager(private val bot: Bot) {
 
     }
 
+    fun getTaskCount(role: Role, status: TaskStatus): Int {
+        val taskChannel = getTaskChannel(role) ?: return 0
+        return taskChannel.tasks.count { it.status == status }
+    }
+
     fun getTaskCount(forumChannel: ForumChannel): Int {
         val taskChannel = getTaskChannel(forumChannel) ?: return 0
         return taskChannel.tasks.size
+    }
+
+    fun getTaskCount(forumChannel: ForumChannel, status: TaskStatus): Int {
+        val taskChannel = getTaskChannel(forumChannel) ?: return 0
+        return taskChannel.tasks.count { it.status == status }
     }
 
     fun getTaskCount(member: Member): Int {
@@ -424,18 +420,20 @@ class TaskManager(private val bot: Bot) {
         } ?: 0
     }
 
-    fun getTaskCount(): Int {
-
-        if (taskChannels.isEmpty()) return 0
-
-        var taskCount = 0
-
-        taskChannels.forEach {
-            taskCount += it.tasks.size
+    fun getTaskCount(member: Member, status: TaskStatus): Int {
+        return taskChannels.sumOf { channel ->
+            channel.tasks.count { task ->
+                task.taskData.assignees?.contains(member.id) == true && task.status == status
+            }
         }
+    }
 
-        return taskCount
+    fun getTaskCount(): Int {
+        return taskChannels.sumOf { it.tasks.size }
+    }
 
+    fun getTaskCount(status: TaskStatus): Int {
+        return taskChannels.flatMap { it.tasks }.count { it.status == status }
     }
 
     fun refreshTaskEmbed(threadChannel: ThreadChannel, task: Task) {
@@ -448,6 +446,202 @@ class TaskManager(private val bot: Bot) {
 
         }
 
+    }
+
+    fun isHead(taskChannel: TaskChannel, member: Member): Boolean {
+
+        return member.roles.any { taskChannel.headRoleIds.contains(it.id) }
+
+    }
+
+    fun getTasksPassedDeadline(): List<Task> {
+        if (taskChannels.isEmpty()) return emptyList()
+
+        val currentDate = Date()
+
+        return taskChannels.flatMap { it.tasks }
+            .filter { it.status != TaskStatus.DONE }
+            .filter { it.deadline != null && it.deadline!!.before(currentDate) }
+    }
+
+    fun notifyPassedDeadline(task: Task) {
+
+        val channel = task.getChannel() ?: return
+
+        val assignees = task.getAssignees().joinToString(",") { it.asMention }
+
+        val watchers = task.getWatchers().joinToString(",") { it.asMention }
+
+        channel.sendMessage(bot.messagesHandler.messages.deadlinePast
+            .replace("%mentions%", "$assignees , $watchers")).queue()
+
+        if (bot.settingsHandler.settings.notifyAssigneesPassedDeadline) {
+
+            task.getAssignees().forEach {
+                it.user.openPrivateChannel().flatMap {privateChannel ->
+                    privateChannel.sendMessage(bot.messagesHandler.messages.notifyAssigneePassedDeadline
+                        .replace("%channel%", channel.asMention))
+                }.queue()
+            }
+
+        }
+
+        if (bot.settingsHandler.settings.notifyWatchersPassedDeadline) {
+
+            task.getWatchers().forEach {
+                it.user.openPrivateChannel().flatMap {privateChannel ->
+                    privateChannel.sendMessage(bot.messagesHandler.messages.notifyWatchersPassedDeadline
+                        .replace("%channel%", channel.asMention))
+                }.queue()
+            }
+
+        }
+
+    }
+
+    fun startDeadlineCheck(): Job {
+
+        return CoroutineScope(Dispatchers.Default).launch {
+
+            while (true) {
+                getTasksPassedDeadline().forEach {
+                    notifyPassedDeadline(it)
+                }
+
+                delay(((1000*60)*60)*24)
+            }
+
+        }
+
+    }
+
+    fun markComplete(task: Task) {
+
+        val channel = bot.jda.getThreadChannelById(task.taskData.taskId) ?: return
+
+        val forumChannel = channel.parentChannel.asForumChannel()
+
+        val availableTags = forumChannel.availableTags.associate { it.name to it.id }
+
+        val tags: MutableList<ForumTagSnowflake> = mutableListOf()
+
+        val assignees = task.getAssignees()
+
+        availableTags.forEach { tag ->
+            assignees.forEach {
+                if (tag.key == getNicknameOrName(it))
+                    tags.add(ForumTagSnowflake.fromId(tag.value))
+            }
+        }
+
+        tags.add(ForumTagSnowflake.fromId(availableTags[bot.settingsHandler.settings.doneTag]!!))
+
+        task.taskData.completionDate = taskDateFormat.format(Date())
+        task.status = TaskStatus.DONE
+        task.taskData.status = TaskStatus.DONE.toString()
+
+        channel.retrieveStartMessage().queue {
+            val embed = it.embeds[0]
+            it.editMessageEmbeds(generateTaskEmbed(embed.title!!, embed.description!!, task).build()).queue {
+                channel.manager.setAppliedTags(tags).queue {
+                    channel.manager.setArchived(true).queue()
+                }
+            }
+        }
+
+    }
+
+    fun getTags(forumChannel: ForumChannel) {
+
+        forumChannel.availableTags.associate { it.name to it.id }
+
+    }
+
+    private fun getNicknameOrName(member: Member): String {
+
+        return if (bot.settingsHandler.settings.nicknamesInTags && member.nickname != null) member.nickname!!
+        else member.effectiveName
+
+    }
+
+    fun getStats(member: Member): TaskerStats {
+        val stats = TaskerStats(member.id)
+
+        for (task in taskChannels.flatMap { it.tasks }) {
+            val assignees = task.taskData.assignees ?: continue
+            if (member.id in assignees) {
+                classifyTask(stats, task)
+            }
+        }
+
+        return stats
+    }
+
+    fun getStats(role: Role): TaskerStats {
+        val stats = TaskerStats(role.id)
+
+        taskChannels
+            .filter { it.roles.contains(role.id) && it.tasks.isNotEmpty() }
+            .flatMap { it.tasks }
+            .forEach { classifyTask(stats, it) }
+
+        return stats
+    }
+
+    fun getStatsEmbed(name: String, stats: TaskerStats): EmbedBuilder {
+
+        val builder = EmbedBuilder()
+
+        builder.setTitle(bot.messagesHandler.messages.statsTitle.replace("%member%", name))
+
+        val sb = StringBuilder()
+
+        sb.append(bot.messagesHandler.messages.statsActiveTasks.replace("%count%", "${stats.activeTasks.size}"))
+            .append("\n")
+            .append(bot.messagesHandler.messages.statsInProgressTasks.replace("%count%", "${stats.inProgressTasks.size}"))
+            .append("\n")
+            .append(bot.messagesHandler.messages.statsTotalCompleted.replace("%count%", "${stats.completedTasks.size}"))
+            .append("\n")
+            .append(bot.messagesHandler.messages.statsCompletedOnTime.replace("%count%", "${stats.completedOnTime.size}"))
+            .append("\n")
+            .append(bot.messagesHandler.messages.statsDelayedTasks.replace("%count%", "${stats.completedAfterDeadline.size}"))
+
+        builder.setDescription(sb.toString())
+
+        return builder
+
+    }
+
+    private fun classifyTask(stats: TaskerStats, task: Task) {
+
+        when (task.status) {
+
+            TaskStatus.OPEN -> stats.activeTasks.add(task.taskData.taskId)
+            TaskStatus.IN_PROGRESS -> stats.activeTasks.add(task.taskData.taskId)
+            TaskStatus.DONE -> {
+
+                if (task.taskData.completionDate != null) {
+
+                    if (afterDeadline(task.taskData.completionDate!!)) {
+                        stats.completedAfterDeadline.add(task.taskData.taskId)
+                    } else {
+                        stats.completedOnTime.add(task.taskData.taskId)
+                    }
+
+                }
+
+                stats.completedTasks.add(task.taskData.taskId)
+
+            }
+
+        }
+
+    }
+
+    fun afterDeadline(dateString: String): Boolean {
+        val currentDate = Date()
+        val parsedDate = taskDateFormat.parse(dateString)
+        return currentDate.after(parsedDate)
     }
 
 }
