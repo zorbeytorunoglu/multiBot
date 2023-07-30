@@ -9,11 +9,14 @@ import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.channel.forums.ForumTagData
 import net.dv8tion.jda.api.entities.channel.forums.ForumTagSnowflake
+import net.dv8tion.jda.api.entities.emoji.Emoji
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.commands.Command.Choice
 import net.dv8tion.jda.api.interactions.commands.OptionType
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
+import net.dv8tion.jda.api.interactions.components.buttons.Button
+import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder
 import net.dv8tion.jda.api.utils.messages.MessageCreateData
 import net.dv8tion.jda.api.utils.messages.MessageEditData
@@ -49,13 +52,27 @@ class TaskCommand(private val bot: Bot): Command {
             Choice(it.name, it.name)
         }
 
+        val statusChoices = mutableListOf(Choice("ALL", "ALL"))
+
+        val status = TaskStatus.values().map {
+            Choice(it.name, it.name)
+        }
+
+        statusChoices.addAll(status)
+
         val setSubCommandsChoices = listOf("status", "assignee", "deadline", "watcher", "priority").map {
             Choice(it, it)
         }
 
         return listOf(
+            SubcommandData("stats", "Gets the stats of a tasker.").addOptions(
+                OptionData(OptionType.USER, "member", "Member", false, false),
+                OptionData(OptionType.ROLE, "role", "Role", false, false)
+            ),
             SubcommandData("count", "Gets the task count.")
                 .addOptions(
+                    OptionData(OptionType.STRING, "status","Task status",true, false)
+                        .addChoices(statusChoices),
                     OptionData(OptionType.CHANNEL, "channel", "Task channel", false, false),
                     OptionData(OptionType.USER, "member", "Member", false, false),
                     OptionData(OptionType.ROLE,"role", "Role", false, false)
@@ -91,14 +108,59 @@ class TaskCommand(private val bot: Bot): Command {
 
     override fun execute(event: SlashCommandInteractionEvent) {
 
-        if (event.subcommandName == "count") {
+        if (event.subcommandName == "stats") {
 
             if (event.options.isEmpty()) {
+                event.reply(bot.messagesHandler.messages.wrongStatsUsage).queue()
+                return
+            }
 
-                event.channel.sendMessage(bot.messagesHandler.messages.totalTaskCount.replace(
-                    "%count", "${bot.taskManager.getTaskCount()}")).queue()
+            if (event.getOption("member") != null) {
+
+                val member = event.getOption("member")!!.asMember
+
+                var name = member!!.effectiveName
+
+                if (member.nickname != null)
+                    name = member.nickname!!
+
+                event.replyEmbeds(bot.taskManager.getStatsEmbed(name, bot.taskManager.getStats(member)).build()).queue()
 
                 return
+
+            } else if (event.getOption("role") != null) {
+
+                val role = event.getOption("role")!!.asRole
+
+                event.replyEmbeds(bot.taskManager.getStatsEmbed(role.name, bot.taskManager.getStats(role)).build()).queue()
+
+                return
+
+            } else {
+
+                event.reply(bot.messagesHandler.messages.wrongStatsUsage).queue()
+                return
+
+            }
+
+        }
+
+        if (event.subcommandName == "count") {
+
+            val statusString = event.getOption("status")!!.asString
+
+            val status: TaskStatus? = try {
+                TaskStatus.valueOf(statusString)
+            } catch (e: IllegalArgumentException) {
+                null
+            }
+
+            val statusMessage = when (status) {
+
+                null -> bot.messagesHandler.messages.all
+                TaskStatus.DONE -> bot.settingsHandler.settings.doneTag
+                TaskStatus.IN_PROGRESS -> bot.settingsHandler.settings.inProgressTag
+                TaskStatus.OPEN -> bot.settingsHandler.settings.openTag
 
             }
 
@@ -106,9 +168,20 @@ class TaskCommand(private val bot: Bot): Command {
 
                 val member = event.guild!!.getMember(event.getOption("member")!!.asUser)!!
 
-                event.channel.sendMessage(bot.messagesHandler.messages.taskCountMember
-                    .replace("%member%", member.asMention)
-                    .replace("%count%", "${bot.taskManager.getTaskCount(member)}")).queue()
+                event.reply(getTaskCountMessage(member.asMention,
+                    if (status != null) bot.taskManager.getTaskCount(member, status) else
+                        bot.taskManager.getTaskCount(member), statusMessage)).queue()
+
+                return
+
+            } else if (event.getOption("role") != null) {
+
+                val role = event.getOption("role")!!.asRole
+
+                event.reply(getTaskCountMessage(role.name,
+                    if (status != null) bot.taskManager.getTaskCount(role, status) else
+                        bot.taskManager.getTaskCount(role),
+                    statusMessage)).queue()
 
                 return
 
@@ -116,14 +189,25 @@ class TaskCommand(private val bot: Bot): Command {
 
                 val channel = event.getOption("channel")!!.asChannel
 
-                val taskChannel = bot.taskManager.getTaskChannel(channel) ?: run {
-                    event.channel.sendMessage(bot.messagesHandler.messages.taskChannelNotFound).queue()
+                val taskChannel = bot.taskManager.getTaskChannel(
+                    channel
+                ) ?: run {
+                    event.reply(bot.messagesHandler.messages.taskChannelNotFound).queue()
                     return
                 }
 
-                event.channel.sendMessage(bot.messagesHandler.messages.taskCountChannel
-                    .replace("%channel%", channel.asMention)
-                    .replace("%count%", "${bot.taskManager.getTaskCount(taskChannel)}")).queue()
+                event.reply(getTaskCountMessage(channel.asMention,
+                    if (status != null) bot.taskManager.getTaskCount(taskChannel, status)
+                    else bot.taskManager.getTaskCount(taskChannel),
+                    statusMessage)).queue()
+
+                return
+
+            } else {
+
+                event.reply(bot.messagesHandler.messages.totalTaskCount.replace("%count%",
+                    if (status != null) "${bot.taskManager.getTaskCount(status)}" else
+                "${bot.taskManager.getTaskCount()}")).queue()
 
                 return
 
@@ -132,6 +216,11 @@ class TaskCommand(private val bot: Bot): Command {
         }
 
         if (event.subcommandName == "set") {
+
+            if (!bot.permissionManager.hasPermission(event.member!!,com.zorbeytorunoglu.multiBot.permissions.Permission.TASK_SET)) {
+                event.reply(bot.messagesHandler.messages.noPermission).setEphemeral(true).queue()
+                return
+            }
 
             val key = event.getOption("key")!!.asString
 
@@ -276,6 +365,11 @@ class TaskCommand(private val bot: Bot): Command {
 
         if (event.subcommandName == "refreshtags") {
 
+            if (!bot.permissionManager.hasPermission(event.member!!,com.zorbeytorunoglu.multiBot.permissions.Permission.TASK_REFRESH_TAGS)) {
+                event.reply(bot.messagesHandler.messages.noPermission).setEphemeral(true).queue()
+                return
+            }
+
             val channel = bot.taskManager.getTaskChannel(event.getOption("channel")!!.asChannel) ?: run {
                 event.channel.sendMessage(bot.messagesHandler.messages.taskChannelNotFound).queue()
                 return
@@ -289,6 +383,11 @@ class TaskCommand(private val bot: Bot): Command {
         }
 
         if (event.subcommandName == "setup") {
+
+            if (!bot.permissionManager.hasPermission(event.member!!, com.zorbeytorunoglu.multiBot.permissions.Permission.TASK_SETUP)) {
+                event.reply(bot.messagesHandler.messages.noPermission).setEphemeral(true).queue()
+                return
+            }
 
             val category = event.guild!!.getCategoryById(event.getOption("category")!!.asString) ?: run {
                 event.reply(bot.messagesHandler.messages.categoryNotFound).setEphemeral(true).queue()
@@ -388,6 +487,11 @@ class TaskCommand(private val bot: Bot): Command {
                 return
             }
 
+            if (!bot.taskManager.isHead(channel, event.member!!)) {
+                event.reply(bot.messagesHandler.messages.notHead).queue()
+                return
+            }
+
             val title = event.getOption("title")!!.asString
 
             val description = event.getOption("description")!!.asString
@@ -397,7 +501,13 @@ class TaskCommand(private val bot: Bot): Command {
             var assignees = listOf<Member>()
 
             if (assigneesString != null) {
-               assignees = assigneesString.mapNotNull { Utils.getMember(event.guild!!, removeSpaces(it)!!) }
+                try {
+                    assignees = assigneesString.mapNotNull { Utils.getMember(event.guild!!, removeSpaces(it)!!) }
+                } catch (e: NumberFormatException) {
+                    e.printStackTrace()
+                    event.reply(bot.messagesHandler.messages.invalidAssignees).queue()
+                    return
+                }
             }
 
             val deadline = event.getOption("deadline")?.asString?.let { deadlineString ->
@@ -426,13 +536,22 @@ class TaskCommand(private val bot: Bot): Command {
                 val taskData = TaskData(threadChannel.threadChannel.id, event.member!!.id, if (assignees.isEmpty()) null else assignees.map { it.id },
                     if (watchers.isEmpty()) null else watchers.map { it.id },
                     if (deadline == null) null else bot.taskManager.taskDateFormat.format(deadline),
-                    TaskStatus.OPEN.toString(), priority.toString())
+                    TaskStatus.OPEN.toString(), priority.toString(), null)
 
                 val task = Task(bot, taskData)
 
                 val editMessage = threadChannel.message.editMessage(MessageEditData.fromContent(""))
 
-                val edit = MessageCreateBuilder().setEmbeds(bot.taskManager.generateTaskEmbed(title,description,task).build()).build()
+                val buttons = listOf(Button.of(ButtonStyle.SECONDARY, "open",
+                    bot.settingsHandler.settings.openTag, Emoji.fromFormatted(bot.settingsHandler.settings.openTagEmoji)),
+                    Button.of(ButtonStyle.PRIMARY, "in-progress",
+                    bot.settingsHandler.settings.inProgressTag, Emoji.fromFormatted(bot.settingsHandler.settings.inProgressTagEmoji)),
+                    Button.of(ButtonStyle.SUCCESS, "done",
+                        bot.settingsHandler.settings.doneTag, Emoji.fromFormatted(bot.settingsHandler.settings.doneTagEmoji))
+                    )
+
+                val edit = MessageCreateBuilder().setEmbeds(bot.taskManager.generateTaskEmbed(title,description,task)
+                    .build()).setActionRow(buttons).build()
 
                 val tags = mutableListOf<ForumTagSnowflake>()
 
@@ -445,6 +564,7 @@ class TaskCommand(private val bot: Bot): Command {
                 editMessage.applyCreateData(edit).queue {
                     threadChannel.threadChannel.manager.setAppliedTags(tags).queue {
                         event.reply(bot.messagesHandler.messages.taskCreated.replace("%channel%",threadChannel.threadChannel.asMention)).queue()
+                        channel.tasks.add(task)
                         if (bot.settingsHandler.settings.dmAssignees) {
 
                             if (assignees.isNotEmpty()) {
@@ -466,6 +586,11 @@ class TaskCommand(private val bot: Bot): Command {
 
         if (event.subcommandName == "delete") {
 
+            if (!bot.permissionManager.hasPermission(event.member!!,com.zorbeytorunoglu.multiBot.permissions.Permission.TASK_DELETE)) {
+                event.reply(bot.messagesHandler.messages.noPermission).setEphemeral(true).queue()
+                return
+            }
+
             val task = bot.taskManager.getTask(bot, event.channel) ?: run {
                 event.channel.sendMessage(bot.messagesHandler.messages.taskNotFound).queue()
                 return
@@ -486,6 +611,13 @@ class TaskCommand(private val bot: Bot): Command {
 
     private fun removeSpaces(input: String?): String? {
         return input?.replace("\\s".toRegex(), "")
+    }
+
+    private fun getTaskCountMessage(mentionable: String, count: Int, status: String): String {
+        return bot.messagesHandler.messages.taskCountStatusMentionable
+            .replace("%mentionable%", mentionable)
+            .replace("%status%", status)
+            .replace("%count%", "$count")
     }
 
 }
