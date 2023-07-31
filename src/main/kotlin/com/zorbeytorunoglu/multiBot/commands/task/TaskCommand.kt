@@ -242,7 +242,7 @@ class TaskCommand(private val bot: Bot): Command {
 
                 task.taskData.assignees = members.map { it.id }
 
-                bot.taskManager.refreshTaskEmbed(event.channel.asThreadChannel(), task)
+                bot.taskManager.refreshTaskEmbed(task)
 
                 event.channel.sendMessage(bot.messagesHandler.messages.assigneeSet).queue()
 
@@ -266,7 +266,7 @@ class TaskCommand(private val bot: Bot): Command {
                 task.taskData.status = status.toString()
                 task.status = status
 
-                bot.taskManager.refreshTaskEmbed(event.channel.asThreadChannel(), task)
+                bot.taskManager.refreshTaskEmbed(task)
 
                 event.channel.sendMessage(bot.messagesHandler.messages.statusSet).queue()
 
@@ -287,7 +287,7 @@ class TaskCommand(private val bot: Bot): Command {
                 task.deadline = date
                 task.taskData.deadline = value
 
-                bot.taskManager.refreshTaskEmbed(event.channel.asThreadChannel(), task)
+                bot.taskManager.refreshTaskEmbed(task)
 
                 event.channel.sendMessage(bot.messagesHandler.messages.deadlineSet).queue()
 
@@ -304,7 +304,7 @@ class TaskCommand(private val bot: Bot): Command {
                 } else {
                     task.taskData.assignees = watchers.map { it.id }
 
-                    bot.taskManager.refreshTaskEmbed(event.channel.asThreadChannel(), task)
+                    bot.taskManager.refreshTaskEmbed(task)
 
                     event.channel.sendMessage(bot.messagesHandler.messages.watcherSet).queue()
                 }
@@ -331,7 +331,7 @@ class TaskCommand(private val bot: Bot): Command {
                 task.taskData.priority = priority.toString()
                 task.priority = priority
 
-                bot.taskManager.refreshTaskEmbed(event.channel.asThreadChannel(), task)
+                bot.taskManager.refreshTaskEmbed(task)
 
                 event.channel.sendMessage(bot.messagesHandler.messages.prioritySet).queue()
 
