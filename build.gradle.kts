@@ -1,6 +1,9 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     kotlin("jvm") version "1.8.21"
     application
+    id("com.github.johnrengelman.shadow") version "7.1.2"
 }
 
 group = "com.zorbeytorunoglu"
@@ -29,6 +32,12 @@ tasks.jar {
         from(zipTree(file.absoluteFile))
     }
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+tasks.withType<ShadowJar>() {
+    manifest {
+        attributes["Main-Class"] = "com.zorbeytorunoglu.multiBot.MainKt"
+    }
 }
 
 kotlin {
