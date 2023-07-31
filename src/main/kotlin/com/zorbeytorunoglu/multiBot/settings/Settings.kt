@@ -23,6 +23,7 @@ data class Settings(
     val scheduledDeadlineCheck: Boolean = true,
     val deadlineCheckDelayHour: Int = 24,
     val notifyAssigneesPassedDeadline: Boolean = true,
-    val notifyWatchersPassedDeadline: Boolean = true
+    val notifyWatchersPassedDeadline: Boolean = true,
+    val notifyWatchersOnTaskDone: Boolean = true
 
 )
