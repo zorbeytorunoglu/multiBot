@@ -83,6 +83,9 @@ data class Messages(
     val statsDelayedTasks: String = "Tasks completed post deadline: %count%",
     val statsActiveTasks: String = "Open tasks: %count%",
     val statsInProgressTasks: String = "Tasks in progress: %count%",
-    val wrongStatsUsage: String = "Incorrect usage! You must choose a role or a member."
+    val wrongStatsUsage: String = "Incorrect usage! You must choose a role or a member.",
+    val statusAlready: String = "Status of this task is already %status%.",
+    val statusUpdated: String = "Status of this task has been changed to **%status%** by %member%",
+    val watcherTaskDoneNotification: String = "A task that you are a watcher of has been marked as **DONE**! %channel%"
 
 )
