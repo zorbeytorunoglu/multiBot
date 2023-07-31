@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
 import net.dv8tion.jda.api.entities.channel.forums.ForumTag
 import net.dv8tion.jda.api.entities.channel.forums.ForumTagData
 import net.dv8tion.jda.api.entities.channel.forums.ForumTagSnowflake
+import net.dv8tion.jda.api.entities.channel.unions.ChannelUnion
 import net.dv8tion.jda.api.entities.channel.unions.GuildChannelUnion
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion
 import net.dv8tion.jda.api.entities.emoji.Emoji
@@ -102,14 +103,10 @@ class TaskManager(private val bot: Bot) {
 
     private suspend fun loadTasks(): Int = coroutineScope {
         if (taskChannels.isEmpty()) return@coroutineScope 0
-
         val tasksDeferred = mutableListOf<Deferred<Int>>()
-
         for (taskChannel in taskChannels) {
             val forumChannel = bot.jda.getForumChannelById(taskChannel.channelId) ?: continue
-
             if (forumChannel.threadChannels.isEmpty()) continue
-
             for (threadChannel in forumChannel.threadChannels) {
                 val deferredTask = async {
                     val startMessage = threadChannel.retrieveStartMessage().complete()
@@ -186,6 +183,16 @@ class TaskManager(private val bot: Bot) {
         if (channel.asThreadChannel().ownerId != bot.jda.selfUser.id) return null
 
         return bot.taskManager.taskChannels.flatMap { it.tasks }.find { it.taskData.taskId == channel.id }
+
+    }
+
+    fun getTask(channel: ChannelUnion): Task? {
+
+        if (channel.type != ChannelType.GUILD_PRIVATE_THREAD && channel.type != ChannelType.GUILD_PUBLIC_THREAD) return null
+
+        if (!isTask(channel.asThreadChannel())) return null
+
+        return taskChannels.flatMap { it.tasks }.find { it.taskData.taskId == channel.id }
 
     }
 
@@ -322,6 +329,25 @@ class TaskManager(private val bot: Bot) {
         return list
     }
 
+    fun getAssigneesTagsInTask(task: Task, forumChannel: ForumChannel): MutableList<ForumTagSnowflake> {
+
+        val list = mutableListOf<ForumTagSnowflake>()
+
+        val availableTags = forumChannel.availableTags
+
+        if (task.taskData.assignees == null) return list
+
+        for (member in task.getAssignees()) {
+            val name = if (bot.settingsHandler.settings.nicknamesInTags && member.nickname != null) member.nickname else member.effectiveName
+
+            val matchingTag = availableTags.find { it.name == name }
+            matchingTag?.let { list.add(ForumTagSnowflake.fromId(it.id)) }
+        }
+
+        return list
+
+    }
+
     fun generateTaskEmbed(title: String, description: String, task: Task): EmbedBuilder {
         val builder = EmbedBuilder()
             .setTitle(title)
@@ -352,7 +378,7 @@ class TaskManager(private val bot: Bot) {
         builder.addField(MessageEmbed.Field(
             bot.messagesHandler.messages.taskEmbedPriority, priority, true))
 
-        val status = task.status.toString().replace("_", "")
+        val status = task.status.toString().replace("_", " ")
         builder.addField(MessageEmbed.Field(
             bot.messagesHandler.messages.taskEmbedStatus, status, true))
 
@@ -436,9 +462,9 @@ class TaskManager(private val bot: Bot) {
         return taskChannels.flatMap { it.tasks }.count { it.status == status }
     }
 
-    fun refreshTaskEmbed(threadChannel: ThreadChannel, task: Task) {
+    fun refreshTaskEmbed(task: Task) {
 
-        threadChannel.retrieveStartMessage().queue { startMessage ->
+        task.getChannel()?.retrieveStartMessage()?.queue { startMessage ->
 
             val embed = startMessage.embeds[0]
 
@@ -642,6 +668,56 @@ class TaskManager(private val bot: Bot) {
         val currentDate = Date()
         val parsedDate = taskDateFormat.parse(dateString)
         return currentDate.after(parsedDate)
+    }
+
+    fun isAssignee(member: Member, task: Task): Boolean {
+        if (task.taskData.assignees == null) return false
+        return task.taskData.assignees!!.contains(member.id)
+    }
+
+    fun isWatcher(member: Member, task: Task): Boolean {
+        if (task.taskData.watchers == null) return false
+        return (task.taskData.watchers!!.contains(member.id))
+    }
+
+    fun getStatusAsTag(forumChannel: ForumChannel, status: TaskStatus): ForumTagSnowflake? {
+
+        val statusName = when (status) {
+
+            TaskStatus.OPEN -> bot.settingsHandler.settings.openTag
+            TaskStatus.DONE -> bot.settingsHandler.settings.doneTag
+            TaskStatus.IN_PROGRESS -> bot.settingsHandler.settings.inProgressTag
+
+        }
+
+        return forumChannel.availableTags.find { it.name == statusName }
+
+    }
+
+    fun updateStatus(task: Task, status: TaskStatus): Boolean {
+
+        val forumChannel = task.getChannel()!!.parentChannel.asForumChannel()
+
+        val statusTag = getStatusAsTag(forumChannel, status) ?: return false
+
+        if (status == TaskStatus.OPEN || status == TaskStatus.IN_PROGRESS) {
+            if (task.taskData.completionDate != null)
+                task.taskData.completionDate = null
+        }
+
+        task.taskData.status = status.toString()
+        task.status = status
+
+        refreshTaskEmbed(task)
+
+        val assigneeTags = getAssigneesTagsInTask(task, forumChannel)
+
+        assigneeTags.add(statusTag)
+
+        task.getChannel()!!.manager.setAppliedTags(assigneeTags).queue()
+
+        return true
+
     }
 
 }

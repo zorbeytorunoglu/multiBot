@@ -1,9 +1,11 @@
 package com.zorbeytorunoglu.multiBot.utils
 
+import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Mentions
 import net.dv8tion.jda.api.entities.Role
+import net.dv8tion.jda.api.entities.User
 import java.awt.Color
 
 object Utils {
@@ -46,6 +48,18 @@ object Utils {
 
     fun isRole(mention: Mentions): Boolean {
         return mention.roles.isNotEmpty()
+    }
+
+    fun isAdmin(member: Member): Boolean {
+
+        return member.permissions.contains(Permission.ADMINISTRATOR)
+
+    }
+
+    fun sendDirectMessage(user: User, message: String) {
+        user.openPrivateChannel().flatMap {
+            it.sendMessage(message)
+        }.queue()
     }
 
 }
