@@ -1,17 +1,24 @@
-package com.zorbeytorunoglu.multiBot.ticket.listeners
+package com.zorbeytorunoglu.multiBot.events.listeners
 
 import com.zorbeytorunoglu.multiBot.Bot
-import com.zorbeytorunoglu.multiBot.configuration.embedmessage.EmbedMessage
 import com.zorbeytorunoglu.multiBot.configuration.embedmessage.EmbedMessageBuilder
+import com.zorbeytorunoglu.multiBot.events.AbstractListener
 import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
-import net.dv8tion.jda.api.hooks.ListenerAdapter
 import java.lang.StringBuilder
 import java.util.concurrent.TimeUnit
 
-class TicketButtonListener(private val bot: Bot): ListenerAdapter() {
+class TicketListener(bot: Bot): AbstractListener(bot) {
 
-    override fun onButtonInteraction(event: ButtonInteractionEvent) {
+    override suspend fun onEvent(event: GenericEvent) {
+        if (!bot.settingsHandler.settings.ticketSystem) return
+
+        if (event is ButtonInteractionEvent)
+            onButtonInteraction(event)
+    }
+
+    private fun onButtonInteraction(event: ButtonInteractionEvent) {
 
         if (!event.isFromGuild) return
 
@@ -41,10 +48,11 @@ class TicketButtonListener(private val bot: Bot): ListenerAdapter() {
 
             //TODO: Can make permissions configurable
 
-            it.manager.putPermissionOverride(it.guild.publicRole, mutableListOf(), mutableListOf(Permission.VIEW_CHANNEL)).queue {void ->
+            it.manager.putPermissionOverride(it.guild.publicRole, mutableListOf(), mutableListOf(Permission.VIEW_CHANNEL)).queue { void ->
 
                 it.manager.putMemberPermissionOverride(event.member!!.idLong,
-                    mutableListOf(Permission.VIEW_CHANNEL, Permission.MESSAGE_SEND,
+                    mutableListOf(
+                        Permission.VIEW_CHANNEL, Permission.MESSAGE_SEND,
                         Permission.MESSAGE_HISTORY, Permission.MESSAGE_ATTACH_FILES,
                         Permission.MESSAGE_ADD_REACTION), mutableListOf()
                 ).queue { void2 ->
