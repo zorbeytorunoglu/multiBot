@@ -18,11 +18,16 @@ import net.dv8tion.jda.api.entities.channel.unions.ChannelUnion
 import net.dv8tion.jda.api.entities.channel.unions.GuildChannelUnion
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion
 import net.dv8tion.jda.api.entities.emoji.Emoji
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.awt.Color
 import java.text.SimpleDateFormat
 import java.util.Date
+import kotlin.math.log
 
 class TaskManager(private val bot: Bot) {
+
+    private val logger: Logger = LoggerFactory.getLogger(TaskManager::class.java.name)
 
     val taskChannels = ArrayList<TaskChannel>()
     val taskDateFormat = SimpleDateFormat(bot.settingsHandler.settings.taskDateFormat)
@@ -46,16 +51,16 @@ class TaskManager(private val bot: Bot) {
 
     init {
 
-        println("${loadTaskChannels().size} task channels are loaded.")
-
-        CoroutineScope(Dispatchers.IO).launch {
-
-            println("${loadTasks()} tasks are loaded.")
-
+        if (!bot.settingsHandler.settings.taskSystem) {
+            logger.info("Tasks and task channels will not be loaded since it is disabled in settings.json")
+        } else {
+            println("${loadTaskChannels().size} task channels are loaded.")
+            CoroutineScope(Dispatchers.IO).launch {
+                println("${loadTasks()} tasks are loaded.")
+            }
+            if (bot.settingsHandler.settings.scheduledDeadlineCheck)
+                startDeadlineCheck()
         }
-
-        if (bot.settingsHandler.settings.scheduledDeadlineCheck)
-            startDeadlineCheck()
 
     }
 
