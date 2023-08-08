@@ -524,7 +524,7 @@ class TaskManager(private val bot: Bot) {
      * @param forumChannel The ForumChannel object representing the forum channel associated with the task.
      * @return A mutable list of ForumTagSnowflake objects representing tags associated with task assignees.
      */
-    fun getAssigneesTagsInTask(task: Task, forumChannel: ForumChannel): MutableList<ForumTagSnowflake> {
+    private fun getAssigneesTagsInTask(task: Task, forumChannel: ForumChannel): MutableList<ForumTagSnowflake> {
         /**
          * Initialize an empty mutable list to store the ForumTagSnowflake objects.
          */
@@ -864,7 +864,7 @@ class TaskManager(private val bot: Bot) {
      *
      * @return A list of Task objects that have passed their deadlines and are not marked as "DONE".
      */
-    fun getTasksPassedDeadline(): List<Task> {
+    private fun getTasksPassedDeadline(): List<Task> {
         /**
          * Check if there are no task channels available.
          * If so, return an empty list since there are no tasks to consider.
@@ -888,7 +888,7 @@ class TaskManager(private val bot: Bot) {
      *
      * @param task The Task object representing the task that has passed its deadline.
      */
-    fun notifyPassedDeadline(task: Task) {
+    private fun notifyPassedDeadline(task: Task) {
         /**
          * Retrieve the channel associated with the task.
          */
@@ -936,7 +936,7 @@ class TaskManager(private val bot: Bot) {
      *
      * @return A Job object representing the running coroutine job.
      */
-    fun startDeadlineCheck(): Job {
+    private fun startDeadlineCheck(): Job {
         /**
          * Launch a coroutine within a CoroutineScope with a default dispatcher (thread pool).
          * The coroutine continuously checks for tasks that have passed their deadlines and sends notifications.
@@ -1162,7 +1162,7 @@ class TaskManager(private val bot: Bot) {
      * @param deadlineStr The string representation of the deadline date in the format "dd-MM-yyyy".
      * @return True if the current date is after the deadline, false otherwise.
      */
-    fun afterDeadline(deadlineStr: String): Boolean {
+    private fun afterDeadline(deadlineStr: String): Boolean {
         // Create a date format for parsing the deadline string.
         val dateFormat = SimpleDateFormat("dd-MM-yyyy")
 
@@ -1254,7 +1254,7 @@ class TaskManager(private val bot: Bot) {
      * @param status The TaskStatus value for which the corresponding forum tag is needed.
      * @return A ForumTagSnowflake object representing the forum tag associated with the provided status, or null if not found.
      */
-    fun getStatusAsTag(forumChannel: ForumChannel, status: TaskStatus): ForumTagSnowflake? {
+    private fun getStatusAsTag(forumChannel: ForumChannel, status: TaskStatus): ForumTagSnowflake? {
         /**
          * Determine the name of the forum tag associated with the provided TaskStatus.
          * The name is retrieved based on the TaskStatus from the bot's settingsHandler.
