@@ -30,4 +30,8 @@ fun main() {
 
     bot.jda = builder.build()
 
+    Runtime.getRuntime().addShutdownHook(Thread {
+        bot.jda.shutdown()
+    })
+
 }
