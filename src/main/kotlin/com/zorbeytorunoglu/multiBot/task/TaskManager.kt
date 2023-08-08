@@ -22,8 +22,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.awt.Color
 import java.text.SimpleDateFormat
-import java.util.Date
-import kotlin.math.log
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import kotlin.collections.HashSet
 
 class TaskManager(private val bot: Bot) {
 
@@ -488,11 +490,9 @@ class TaskManager(private val bot: Bot) {
     fun getTasksPassedDeadline(): List<Task> {
         if (taskChannels.isEmpty()) return emptyList()
 
-        val currentDate = Date()
-
         return taskChannels.flatMap { it.tasks }
             .filter { it.status != TaskStatus.DONE }
-            .filter { it.deadline != null && it.deadline!!.before(currentDate) }
+            .filter { it.deadline != null && afterDeadline(taskDateFormat.format(it.deadline)) }
     }
 
     fun notifyPassedDeadline(task: Task) {
@@ -669,10 +669,32 @@ class TaskManager(private val bot: Bot) {
 
     }
 
-    fun afterDeadline(dateString: String): Boolean {
-        val currentDate = Date()
-        val parsedDate = taskDateFormat.parse(dateString)
-        return currentDate.after(parsedDate)
+    fun afterDeadline(deadlineStr: String): Boolean {
+        val dateFormat = SimpleDateFormat("dd-MM-yyyy")
+
+        val currentDate = Calendar.getInstance()
+        val deadline = Calendar.getInstance()
+
+        currentDate.time = Date()
+        deadline.time = dateFormat.parse(deadlineStr)
+
+        val currentYear = currentDate.get(Calendar.YEAR)
+        val currentMonth = currentDate.get(Calendar.MONTH)
+        val currentDay = currentDate.get(Calendar.DAY_OF_MONTH)
+
+        val deadlineYear = deadline.get(Calendar.YEAR)
+        val deadlineMonth = deadline.get(Calendar.MONTH)
+        val deadlineDay = deadline.get(Calendar.DAY_OF_MONTH)
+
+        if (currentYear > deadlineYear) {
+            return true
+        } else if (currentYear == deadlineYear && currentMonth > deadlineMonth) {
+            return true
+        } else if (currentYear == deadlineYear && currentMonth == deadlineMonth && currentDay > deadlineDay) {
+            return true
+        }
+
+        return false
     }
 
     fun isAssignee(member: Member, task: Task): Boolean {
