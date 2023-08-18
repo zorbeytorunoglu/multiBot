@@ -1,5 +1,7 @@
 package com.zorbeytorunoglu.multiBot.messages
 
+import com.zorbeytorunoglu.multiBot.configuration.embedmessage.EmbedMessageConfig
+
 data class Messages(
 
     val ticketPanelSent: String = "Ticket panel is sent!",
@@ -86,6 +88,9 @@ data class Messages(
     val wrongStatsUsage: String = "Incorrect usage! You must choose a role or a member.",
     val statusAlready: String = "Status of this task is already %status%.",
     val statusUpdated: String = "Status of this task has been changed to **%status%** by %member%",
-    val watcherTaskDoneNotification: String = "A task that you are a watcher of has been marked as **DONE**! %channel%"
+    val watcherTaskDoneNotification: String = "A task that you are a watcher of has been marked as **DONE**! %channel%",
+    val welcomeEmbed: EmbedMessageConfig = EmbedMessageConfig(
+        "Welcome to our community %member%!", null, "We take pleasure by your existence here! Glad to see you!",
+        null,null,null,"ORANGE")
 
 )
