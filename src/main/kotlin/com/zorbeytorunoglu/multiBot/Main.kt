@@ -32,6 +32,7 @@ fun main() {
 
     Runtime.getRuntime().addShutdownHook(Thread {
         bot.jda.shutdown()
+        bot.permissionManager.savePermissions()
     })
 
 }
