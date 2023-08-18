@@ -26,6 +26,8 @@ data class Settings(
     val notifyWatchersPassedDeadline: Boolean = true,
     val notifyWatchersOnTaskDone: Boolean = true,
     val ticketSystem: Boolean = true,
-    val taskSystem: Boolean = true
+    val taskSystem: Boolean = true,
+    val welcomeMessage: Boolean = true,
+    val welcomeChannel: String = "1090021099875610855",
 
 )
