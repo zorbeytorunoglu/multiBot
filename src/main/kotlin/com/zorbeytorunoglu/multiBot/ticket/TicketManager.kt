@@ -71,8 +71,6 @@ class TicketManager(val ticketConfigurationHandler: TicketConfigurationHandler) 
 
     fun isTicket(textChannel: TextChannel): Boolean {
 
-        //TODO: Can be improved
-
         if (textChannel.topic == null) return false
 
         return textChannel.topic!!.startsWith("ticket-")
