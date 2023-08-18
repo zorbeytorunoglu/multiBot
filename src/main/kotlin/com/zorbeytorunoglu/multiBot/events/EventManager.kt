@@ -1,10 +1,7 @@
 package com.zorbeytorunoglu.multiBot.events
 
 import com.zorbeytorunoglu.multiBot.Bot
-import com.zorbeytorunoglu.multiBot.events.listeners.ReadyListener
-import com.zorbeytorunoglu.multiBot.events.listeners.SlashCommandListener
-import com.zorbeytorunoglu.multiBot.events.listeners.TaskListener
-import com.zorbeytorunoglu.multiBot.events.listeners.TicketListener
+import com.zorbeytorunoglu.multiBot.events.listeners.*
 import com.zorbeytorunoglu.multiBot.threading.TaskManager
 import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.hooks.IEventManager
@@ -19,6 +16,7 @@ class EventManager(private val bot: Bot): IEventManager {
         listeners.add(ReadyListener(bot))
         listeners.add(SlashCommandListener(bot))
         listeners.add(TicketListener(bot))
+        listeners.add(JoinListener(bot))
 
         return this
 
