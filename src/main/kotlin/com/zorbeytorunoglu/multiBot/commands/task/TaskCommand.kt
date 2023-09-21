@@ -207,7 +207,8 @@ class TaskCommand(private val bot: Bot): Command {
 
                 event.reply(bot.messagesHandler.messages.totalTaskCount.replace("%count%",
                     if (status != null) "${bot.taskManager.getTaskCount(status)}" else
-                "${bot.taskManager.getTaskCount()}")).queue()
+                "${bot.taskManager.getTaskCount()}")
+                    .replace("%status%", statusMessage)).queue()
 
                 return
 
@@ -405,6 +406,8 @@ class TaskCommand(private val bot: Bot): Command {
                 return
             }
 
+            event.deferReply(true).queue()
+
             val headRoles = event.getOption("heads")!!.asString.split(",")
 
             val headRolesList = headRoles.mapNotNull {
@@ -412,12 +415,12 @@ class TaskCommand(private val bot: Bot): Command {
             }
 
             if (headRolesList.isEmpty()) {
-                event.reply(bot.messagesHandler.messages.invalidHeadRole).setEphemeral(true).queue()
+                event.hook.sendMessage(bot.messagesHandler.messages.invalidHeadRole).setEphemeral(true).queue()
                 return
             }
 
             if (bot.taskManager.taskForumExists(category)) {
-                event.reply(bot.messagesHandler.messages.taskChannelExists).setEphemeral(true).queue()
+                event.hook.sendMessage(bot.messagesHandler.messages.taskChannelExists).setEphemeral(true).queue()
                 return
             }
 
@@ -453,9 +456,9 @@ class TaskCommand(private val bot: Bot): Command {
 
                 val nicknameInTags = bot.settingsHandler.settings.nicknamesInTags
 
-                rolesList.forEach {role ->
+                rolesList.forEach { role ->
 
-                    forumChannel.guild.getMembersWithRoles(role).forEach {member ->
+                    forumChannel.guild.getMembersWithRoles(role).forEach { member ->
 
                         val name = if (nicknameInTags && member.nickname != null) member.nickname!! else
                             member.effectiveName
@@ -468,8 +471,8 @@ class TaskCommand(private val bot: Bot): Command {
                 }
 
                 forumChannel.manager.setAvailableTags(tags).queue {
-                    event.reply(bot.messagesHandler.messages.taskChannelCreated
-                        .replace("%channel%", forumChannel.asMention)).queue()
+                    event.hook.sendMessage(bot.messagesHandler.messages.taskChannelCreated
+                        .replace("%channel%", forumChannel.asMention)).setEphemeral(true).queue()
                     val taskChannel = TaskChannel(forumChannel.id, rolesList.map { it.id }, headRolesList.map { it.id })
                     bot.taskManager.taskChannels.add(taskChannel)
                 }
