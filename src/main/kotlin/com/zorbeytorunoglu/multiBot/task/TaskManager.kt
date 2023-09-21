@@ -26,6 +26,7 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
+import kotlin.math.log
 
 class TaskManager(private val bot: Bot) {
 
@@ -136,11 +137,27 @@ class TaskManager(private val bot: Bot) {
         for (taskChannel in taskChannels) {
             val forumChannel = bot.jda.getForumChannelById(taskChannel.channelId) ?: continue
             if (forumChannel.threadChannels.isEmpty()) continue
+
+            logger.info("Loading archived thread channels of ${taskChannel.channelId}...")
+
+            val archivedChannels = forumChannel.retrieveArchivedPublicThreadChannels().complete()
+
+            logger.info("${archivedChannels.size} archived thread channels are loaded.")
+
+            logger.info("Loading the tasks in archived thread channels...")
+
+            if (archivedChannels.isNotEmpty()) {
+
+                logger.info("${loadTasks(archivedChannels)} tasks in archived thread channels are loaded.")
+
+            }
+
             for (threadChannel in forumChannel.threadChannels) {
                 val deferredTask = async {
                     val startMessage = threadChannel.retrieveStartMessage().complete()
                     if (startMessage.embeds.isNotEmpty()) {
                         val taskData = getTaskDataFromEmbed(threadChannel, startMessage.embeds[0])
+
                         if (taskData != null) {
                             taskChannel.tasks.add(Task(bot, taskData))
                             1 // Return 1 for each task added
@@ -156,6 +173,33 @@ class TaskManager(private val bot: Bot) {
         }
 
         tasksDeferred.sumOf { it.await() }
+    }
+
+    private suspend fun loadTask(threadChannel: ThreadChannel): Deferred<Task?> = coroutineScope {
+
+        val deferredResult = async(Dispatchers.IO) {
+
+            val startMessage = threadChannel.retrieveStartMessage().complete()
+
+            if (startMessage.embeds.isEmpty()) return@async null
+
+            val taskData = getTaskDataFromEmbed(threadChannel, startMessage.embeds[0]) ?: return@async null
+
+            println("Task data of ${taskData.taskId}, $taskData")
+
+            Task(bot, taskData)
+
+        }
+
+        deferredResult
+
+    }
+
+    private suspend fun loadTasks(threadChannels: List<ThreadChannel>): Int {
+        return coroutineScope {
+            val deferredTasks = threadChannels.map { async { loadTask(it) } }
+            deferredTasks.awaitAll().count()
+        }
     }
 
     /**
