@@ -65,7 +65,7 @@ data class Messages(
     val taskSetWatchersNotFound: String = "Members to be watchers could not be found from the value. Remember to separate them with ','",
     val prioritySet: String = "Priority is set!",
     val taskChannelHeadsSet: String = "Task channel heads are set!",
-    val totalTaskCount: String = "Total task count is **%count%**",
+    val totalTaskCount: String = "Total task count marked as __%status%__ is **%count%**",
     val taskCountMember: String = "Task count of %member% is **%count%**",
     val taskCountChannel: String = "Task count of %channel% is **%count%**",
     val taskCountRole: String = "Task count of %role% is **%count%**",
